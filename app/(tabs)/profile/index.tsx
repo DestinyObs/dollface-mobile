@@ -11,6 +11,7 @@ import { useBeautyProfileStore } from '@/lib/store/beautyProfileStore';
 import { confirm } from '@/lib/store/confirmStore';
 import { toast } from '@/lib/store/toastStore';
 import { useCartStore } from '@/lib/store/cartStore';
+import { useMeStats } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 import { Img } from '@/constants/images';
 
@@ -20,12 +21,6 @@ const PROFILE_CHIPS = [
   { label: 'Warm Ivory', sub: 'Shade' },
   { label: 'Neutral', sub: 'Undertone' },
   { label: 'Combination', sub: 'Skin type' },
-];
-
-const STATS = [
-  { value: '12', label: 'Saved' },
-  { value: '4',  label: 'Done' },
-  { value: '3',  label: 'Matches' },
 ];
 
 const MENU: { group: string; items: { label: string; icon: IName; route: string; color: string; bg: string }[] }[] = [
@@ -53,6 +48,12 @@ export default function ProfileScreen() {
   const user = useAuthStore(s => s.user);
   const logout = useAuthStore(s => s.logout);
   const clearProfile = useBeautyProfileStore(s => s.clearProfile);
+  const { data: meStats } = useMeStats();
+  const STATS = [
+    { value: meStats?.saved ?? '–', label: 'Saved' },
+    { value: meStats?.done ?? '–', label: 'Done' },
+    { value: meStats?.matches ?? '–', label: 'Matches' },
+  ];
 
   const handleLogout = () => {
     confirm({

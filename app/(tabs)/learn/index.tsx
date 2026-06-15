@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,18 +8,9 @@ import { Text } from '@/components/ui/Text';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage, AppImageBackground } from '@/components/ui/AppImage';
 import { toast } from '@/lib/store/toastStore';
+import { useTutorials, useFeaturedTutorial, useTutorialCategories } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 import { Img } from '@/constants/images';
-
-const CATEGORIES = ['All', 'Base', 'Eyes', 'Lips', 'Brows', 'Cheeks'];
-
-const TUTORIALS: { id: string; title: string; cat: string; mins: string; level: string; views: string; img: string }[] = [
-  { id: '1', title: 'Beginner Foundation Routine', cat: 'Base',  mins: '12 min', level: 'Beginner',     views: '24k', img: Img.tutorials.foundation },
-  { id: '2', title: 'Fluffy Natural Brows',        cat: 'Brows', mins: '8 min',  level: 'Beginner',     views: '18k', img: Img.tutorials.brows },
-  { id: '3', title: 'Soft Smoky Eye, Deep Tones',  cat: 'Eyes',  mins: '18 min', level: 'Intermediate', views: '31k', img: Img.tutorials.smokyEye },
-  { id: '4', title: 'The Glass Skin Method',       cat: 'Base',  mins: '15 min', level: 'Intermediate', views: '42k', img: Img.tutorials.glassBase },
-  { id: '5', title: 'Bold Cut-Crease',             cat: 'Eyes',  mins: '22 min', level: 'Advanced',     views: '12k', img: Img.tutorials.cutCrease },
-];
 
 const LEVEL: Record<string, { bg: string; text: string }> = {
   Beginner:     { bg: '#EAF7EF', text: '#2F7D52' },
@@ -27,6 +19,11 @@ const LEVEL: Record<string, { bg: string; text: string }> = {
 };
 
 export default function LearnScreen() {
+  const [cat, setCat] = useState('All');
+  const { data: categories = [] } = useTutorialCategories();
+  const { data: tutorials = [] } = useTutorials({ category: cat });
+  const { data: featured } = useFeaturedTutorial();
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
@@ -42,13 +39,13 @@ export default function LearnScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         {/* Featured */}
         <Reveal delay={50}>
-          <PressableScale scaleTo={0.985} onPress={() => router.push('/(tabs)/learn/1' as any)} style={s.featuredPad}>
-            <AppImageBackground uri={Img.heroLook} style={s.featured} imageStyle={s.featuredImg}>
+          <PressableScale scaleTo={0.985} onPress={() => router.push(`/(tabs)/learn/${featured?.id ?? '1'}` as any)} style={s.featuredPad}>
+            <AppImageBackground uri={featured?.img ?? Img.heroLook} style={s.featured} imageStyle={s.featuredImg}>
               <LinearGradient colors={['rgba(45,15,26,0.4)', 'rgba(45,15,26,0.9)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View style={s.featuredText}>
-                <Text style={s.featuredEyebrow}>THIS WEEK'S PICK</Text>
-                <Text style={s.featuredTitle}>Shade Matching Masterclass</Text>
-                <Text style={s.featuredMeta}>AI-guided · All levels · 20 min</Text>
+                <Text style={s.featuredEyebrow}>{featured?.eyebrow ?? "THIS WEEK'S PICK"}</Text>
+                <Text style={s.featuredTitle}>{featured?.title ?? 'Shade Matching Masterclass'}</Text>
+                <Text style={s.featuredMeta}>{featured?.meta ?? 'AI-guided · All levels · 20 min'}</Text>
                 <View style={s.featuredBtn}>
                   <Ionicons name="play" size={11} color={Colors.brand.plum} />
                   <Text style={s.featuredBtnText}>Watch Now</Text>
@@ -60,17 +57,20 @@ export default function LearnScreen() {
 
         {/* Categories */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catsScroll} style={s.cats}>
-          {CATEGORIES.map((c, i) => (
-            <TouchableOpacity key={c} style={[s.catChip, i === 0 && s.catActive]} activeOpacity={0.8}>
-              <Text style={[s.catText, { color: i === 0 ? '#FFFFFF' : Colors.text.secondary }]}>{c}</Text>
-            </TouchableOpacity>
-          ))}
+          {categories.map((c) => {
+            const active = c === cat;
+            return (
+              <TouchableOpacity key={c} onPress={() => setCat(c)} style={[s.catChip, active && s.catActive]} activeOpacity={0.8}>
+                <Text style={[s.catText, { color: active ? '#FFFFFF' : Colors.text.secondary }]}>{c}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         {/* Tutorial list */}
         <View style={s.listPad}>
           <Text style={s.listEye}>FOR YOU</Text>
-          {TUTORIALS.map((t, i) => (
+          {tutorials.map((t, i) => (
             <Reveal key={t.id} delay={110 + i * 60}>
               <PressableScale onPress={() => router.push(`/(tabs)/learn/${t.id}` as any)} scaleTo={0.985} style={s.card}>
                 <View>

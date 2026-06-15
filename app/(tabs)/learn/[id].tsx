@@ -1,37 +1,29 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { ScreenLoader } from '@/components/ui/ScreenLoader';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImageBackground } from '@/components/ui/AppImage';
 import { useSavedStore } from '@/lib/store/savedStore';
 import { toast } from '@/lib/store/toastStore';
+import { useTutorial } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
-import { Img } from '@/constants/images';
-
-const TUTORIAL = {
-  title: 'Beginner Foundation Routine',
-  level: 'Beginner',
-  duration: '12 min',
-  views: '24k',
-  description: 'A step-by-step guide to applying foundation that looks natural, lasts all day, and works for your skin tone and type.',
-  steps: [
-    { title: 'Prep your skin', description: 'Start with clean, moisturised skin. Apply a primer suited for your skin type — mattifying for oily, hydrating for dry.', tip: 'Wait 2 minutes after primer before applying foundation.' },
-    { title: 'Choose your tool', description: 'A damp beauty sponge gives the most natural finish. A brush builds more coverage. Fingers give a sheer, skin-like look.', tip: 'Always dampen your sponge so it doesn\'t absorb the product.' },
-    { title: 'Apply foundation', description: 'Start at the centre of your face and blend outward with gentle pressing motions, not dragging.', tip: 'Less is more — build up in thin layers.' },
-    { title: 'Blend the edges', description: 'Check your jawline, hairline and neck. Blend until there are no visible lines.', tip: 'Use a clean sponge edge to soften harsh lines.' },
-  ],
-};
 
 export default function TutorialDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: tutorial } = useTutorial(id ?? '1');
   const toggleSaved = useSavedStore(s => s.toggle);
-  const saved = useSavedStore(s => s.isSaved('tutorials', TUTORIAL.title));
+  const saved = useSavedStore(s => s.isSaved('tutorials', tutorial?.id ?? ''));
+
+  if (!tutorial) return <ScreenLoader />;
+  const TUTORIAL = tutorial;
 
   const onSave = () => {
-    const now = toggleSaved('tutorials', { id: TUTORIAL.title, title: TUTORIAL.title, subtitle: `${TUTORIAL.level} · ${TUTORIAL.duration}`, img: Img.tutorials.foundation });
+    const now = toggleSaved('tutorials', { id: TUTORIAL.id, title: TUTORIAL.title, subtitle: `${TUTORIAL.level} · ${TUTORIAL.duration}`, img: TUTORIAL.img });
     toast.success(now ? 'Tutorial saved' : 'Removed from saved');
   };
 
@@ -41,7 +33,7 @@ export default function TutorialDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
         <Reveal delay={40} style={s.heroPad}>
-          <AppImageBackground uri={Img.tutorials.foundation} style={s.hero} imageStyle={s.heroImg}>
+          <AppImageBackground uri={TUTORIAL.img} style={s.hero} imageStyle={s.heroImg}>
             <LinearGradient colors={['rgba(45,15,26,0.15)', 'rgba(45,15,26,0.85)']} style={StyleSheet.absoluteFill} />
             <View style={s.playWrap}><View style={s.play}><Ionicons name="play" size={22} color={Colors.brand.plum} /></View></View>
             <View style={s.heroBottom}>

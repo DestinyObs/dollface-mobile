@@ -1,41 +1,38 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { ScreenLoader } from '@/components/ui/ScreenLoader';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage } from '@/components/ui/AppImage';
 import { useCartStore } from '@/lib/store/cartStore';
 import { useSavedStore } from '@/lib/store/savedStore';
 import { toast } from '@/lib/store/toastStore';
+import { useProduct } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
-import { Img } from '@/constants/images';
-
-const PRODUCT = { id: 'p_fenty_220n', name: "Pro Filt'r Soft Matte Foundation", brand: 'Fenty Beauty', price: 34, img: Img.products.a };
-
-const SHADES = [
-  { name: 'Light Ivory', hex: '#F5DCBB' }, { name: '150W', hex: '#E8C49A' },
-  { name: '210W', hex: '#D4A070' }, { name: '220N', hex: '#C4875A' },
-  { name: '320W', hex: '#B0703A' }, { name: '420W', hex: '#8C5020' },
-  { name: '490W', hex: '#5C2C08' },
-];
-
-const HIGHLIGHTS = ['Full coverage', 'Soft matte', 'Oil-free', '50 shades'];
 
 export default function ProductDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: product } = useProduct(id ?? '1');
   const [shade, setShade] = useState(3);
   const add = useCartStore(s => s.add);
   const toggleSaved = useSavedStore(s => s.toggle);
-  const saved = useSavedStore(s => s.isSaved('products', PRODUCT.id));
+  const saved = useSavedStore(s => s.isSaved('products', product?.id ?? ''));
+
+  if (!product) return <ScreenLoader />;
+  const SHADES = product.shades;
+  const HIGHLIGHTS = product.highlights;
+  const shadeIndex = Math.min(shade, SHADES.length - 1);
 
   const onSave = () => {
-    const nowSaved = toggleSaved('products', { id: PRODUCT.id, title: PRODUCT.name, subtitle: PRODUCT.brand, img: PRODUCT.img });
+    const nowSaved = toggleSaved('products', { id: product.id, title: product.name, subtitle: product.brand, img: product.img });
     toast.success(nowSaved ? 'Saved to your products' : 'Removed from saved');
   };
   const onAddToBag = () => {
-    add({ id: PRODUCT.id, name: PRODUCT.name, brand: PRODUCT.brand, price: PRODUCT.price, shade: SHADES[shade].name, img: PRODUCT.img });
+    add({ id: product.id, name: product.name, brand: product.brand, price: product.price, shade: SHADES[shadeIndex].name, img: product.img });
     toast.success('Added to bag');
   };
 
@@ -45,16 +42,16 @@ export default function ProductDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
         <Reveal delay={40} style={s.imgPad}>
-          <AppImage uri={Img.products.a} style={s.image} />
+          <AppImage uri={product.img} style={s.image} />
         </Reveal>
 
         <View style={s.body}>
           <Reveal delay={90}>
-            <Text style={s.brand}>FENTY BEAUTY</Text>
-            <Text style={s.name}>Pro Filt'r Soft Matte Foundation</Text>
+            <Text style={s.brand}>{product.brand.toUpperCase()}</Text>
+            <Text style={s.name}>{product.name}</Text>
             <View style={s.metaRow}>
-              <View style={s.ratingPill}><Ionicons name="star" size={12} color="#E8A838" /><Text style={s.ratingText}>4.8</Text><Text style={s.ratingCount}>· 2.4k reviews</Text></View>
-              <Text style={s.price}>£34</Text>
+              <View style={s.ratingPill}><Ionicons name="star" size={12} color="#E8A838" /><Text style={s.ratingText}>{product.rating}</Text><Text style={s.ratingCount}>· {product.reviewCount}</Text></View>
+              <Text style={s.price}>£{product.price}</Text>
             </View>
 
             <View style={s.highlightRow}>
@@ -63,18 +60,18 @@ export default function ProductDetailScreen() {
               ))}
             </View>
 
-            <Text style={s.desc}>A full-coverage, oil-free liquid foundation with a soft matte finish. Builds to full coverage without looking heavy, in 50 inclusive shades.</Text>
+            <Text style={s.desc}>{product.description}</Text>
           </Reveal>
 
           <Reveal delay={150}>
             <View style={s.shadeHead}>
               <Text style={s.sectionTitle}>Shade</Text>
-              <Text style={s.shadeName}>{SHADES[shade].name}</Text>
+              <Text style={s.shadeName}>{SHADES[shadeIndex].name}</Text>
             </View>
             <View style={s.shadeRow}>
               {SHADES.map((sh, i) => (
-                <PressableScale key={sh.name} scaleTo={0.9} onPress={() => setShade(i)} style={[s.shadeDot, { backgroundColor: sh.hex }, shade === i && s.shadeActive]}>
-                  {shade === i ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
+                <PressableScale key={sh.name} scaleTo={0.9} onPress={() => setShade(i)} style={[s.shadeDot, { backgroundColor: sh.hex }, shadeIndex === i && s.shadeActive]}>
+                  {shadeIndex === i ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
                 </PressableScale>
               ))}
             </View>
@@ -89,7 +86,7 @@ export default function ProductDetailScreen() {
         </PressableScale>
         <PressableScale style={[s.btn, s.btnPrimary]} onPress={onAddToBag}>
           <Ionicons name="bag-handle-outline" size={16} color="#FFFFFF" />
-          <Text style={s.btnPrimaryText}>Add to Bag · £34</Text>
+          <Text style={s.btnPrimaryText}>Add to Bag · £{product.price}</Text>
         </PressableScale>
       </View>
     </SafeAreaView>

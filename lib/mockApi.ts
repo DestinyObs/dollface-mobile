@@ -1,14 +1,20 @@
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { storage } from '@/lib/storage';
+import * as seed from '@/lib/data/seed';
 
 /**
  * In-memory + persisted mock backend.
  * Active whenever EXPO_PUBLIC_API_URL is unset (i.e. local FE development).
  * Simulates network latency and the real API response envelope:
  *   { data: { user, tokens } }  /  { data: { ... } }
+ *
+ * Auth uses a realistic latency; content reads are snappier so the app feels
+ * instant while still exercising the real fetch → React Query → render path.
+ * A real backend drops in by setting EXPO_PUBLIC_API_URL — no app changes.
  */
 
 const LATENCY = 650;
+const CONTENT_LATENCY = 280;
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 
@@ -80,11 +86,11 @@ function parseBody(config: InternalAxiosRequestConfig): any {
 }
 
 export const mockAdapter: AxiosAdapter = async (config) => {
-  await wait(LATENCY);
-
   const url = (config.url ?? '').replace(/^\/+/, '');
   const method = (config.method ?? 'get').toLowerCase();
   const body = parseBody(config);
+
+  await wait(url.startsWith('auth/') ? LATENCY : CONTENT_LATENCY);
 
   // ── AUTH ──────────────────────────────────────────────
   if (url === 'auth/register' && method === 'post') {
@@ -143,6 +149,66 @@ export const mockAdapter: AxiosAdapter = async (config) => {
     if (!last) fail(config, 'Not authenticated', 401);
     return ok(config, { user: publicUser(last) });
   }
+
+  // ── BEAUTY PROFILE ────────────────────────────────────
+  if (url === 'beauty-profile' && (method === 'put' || method === 'patch')) return ok(config, body);
+  if (url === 'beauty-profile' && method === 'get') return ok(config, {});
+  if (url === 'beauty-profile/complete' && method === 'post') return ok(config, { onboardingComplete: true });
+
+  // ── HOME FEED ─────────────────────────────────────────
+  if (url === 'feed/home' && method === 'get') return ok(config, seed.HOME_FEED);
+
+  // ── TUTORIALS ─────────────────────────────────────────
+  if (url === 'tutorials' && method === 'get') {
+    const q = String((config.params?.search ?? '')).toLowerCase();
+    const cat = String(config.params?.category ?? 'All');
+    let list = seed.TUTORIALS;
+    if (cat && cat !== 'All') list = list.filter(t => t.cat === cat);
+    if (q) list = list.filter(t => t.title.toLowerCase().includes(q));
+    return ok(config, list);
+  }
+  if (url === 'tutorials/featured' && method === 'get') return ok(config, seed.FEATURED_TUTORIAL);
+  if (url === 'tutorials/categories' && method === 'get') return ok(config, seed.TUTORIAL_CATEGORIES);
+  if (url === 'tutorials/saved' && method === 'get') return ok(config, []);
+  if (/^tutorials\/[^/]+\/(save|complete)$/.test(url) && (method === 'post' || method === 'delete')) return ok(config, { saved: method === 'post' });
+  if (/^tutorials\/[^/]+$/.test(url) && method === 'get') return ok(config, seed.tutorialDetail(url.split('/')[1]));
+
+  // ── MATCH ─────────────────────────────────────────────
+  if (url === 'match/recent' && method === 'get') return ok(config, seed.RECENT_MATCHES);
+  if (url === 'match/categories' && method === 'get') return ok(config, seed.MATCH_CATEGORIES);
+  if (url === 'match/history' && method === 'get') return ok(config, seed.MATCH_HISTORY);
+  if (url === 'match/scans' && method === 'get') return ok(config, seed.SCAN_HISTORY);
+  if ((url === 'match/selfie' || url === 'match/manual') && method === 'post') return ok(config, seed.MATCH_RESULT);
+  if (/^match\/[^/]+\/save$/.test(url) && method === 'post') return ok(config, { saved: true });
+  if (/^match\/[^/]+$/.test(url) && method === 'get') return ok(config, { ...seed.MATCH_RESULT, id: url.split('/')[1] });
+
+  // ── RECREATE ──────────────────────────────────────────
+  if (url === 'recreate/upload' && method === 'post') return ok(config, { id: seed.RECREATION.id, status: 'PROCESSING' }, 201);
+  if (/^recreate\/[^/]+\/status$/.test(url) && method === 'get') return ok(config, { id: url.split('/')[1], status: 'DONE' });
+  if (/^recreate\/[^/]+\/save$/.test(url) && method === 'post') return ok(config, { saved: true });
+  if (url === 'recreate/history' && method === 'get') return ok(config, []);
+  if (/^recreate\/[^/]+$/.test(url) && method === 'get') return ok(config, { ...seed.RECREATION, id: url.split('/')[1] });
+
+  // ── PRODUCTS ──────────────────────────────────────────
+  if (url === 'products' && method === 'get') {
+    const q = String((config.params?.search ?? '')).toLowerCase();
+    const cat = String(config.params?.category ?? 'All');
+    let list = seed.PRODUCTS;
+    if (cat && cat !== 'All') list = list.filter(p => p.category === cat);
+    if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q));
+    return ok(config, list);
+  }
+  if (url === 'products/categories' && method === 'get') return ok(config, seed.PRODUCT_CATEGORIES);
+  if (/^products\/[^/]+$/.test(url) && method === 'get') return ok(config, seed.productDetail(url.split('/')[1]));
+
+  // ── SUBSCRIPTION ──────────────────────────────────────
+  if (url === 'subscription' && method === 'get') return ok(config, seed.SUBSCRIPTION);
+  if (url === 'subscription/plans' && method === 'get') return ok(config, [seed.SUBSCRIPTION.current, seed.SUBSCRIPTION.pro]);
+  if (url === 'subscription/checkout' && method === 'post') return ok(config, { status: 'trialing' });
+
+  // ── ACCOUNT & ROUTINES ────────────────────────────────
+  if (url === 'me/stats' && method === 'get') return ok(config, seed.ME_STATS);
+  if (url === 'routines' && method === 'get') return ok(config, seed.ROUTINES);
 
   // ── FALLBACK ──────────────────────────────────────────
   // Any other endpoint returns an empty success so screens that
