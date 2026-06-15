@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "DollFace",
+    "slug": "dollface-mobile",
+    "version": "1.0.0",
+    "scheme": "dollface",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#753248"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.dollface.mobile"
+    },
+    "android": {
+      "package": "com.dollface.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#753248",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-status-bar",
+      "expo-splash-screen",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "DollFace uses your camera for shade matching and look recreation."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "DollFace accesses your photos to analyze makeup looks for recreation."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#753248"
+        }
+      ],
+      "expo-image"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
