@@ -241,8 +241,18 @@ export const mockAdapter: AxiosAdapter = async (config) => {
   }
   if (url === 'tutorials/featured' && method === 'get') return ok(config, seed.FEATURED_TUTORIAL);
   if (url === 'tutorials/categories' && method === 'get') return ok(config, seed.TUTORIAL_CATEGORIES);
-  if (url === 'tutorials/saved' && method === 'get') return ok(config, []);
-  if (/^tutorials\/[^/]+\/(save|complete)$/.test(url) && (method === 'post' || method === 'delete')) return ok(config, { saved: method === 'post' });
+  if (url === 'tutorials/saved' && method === 'get') {
+    const ids = await readJSON<string[]>('mock_saved_tutorials', []);
+    return ok(config, seed.TUTORIALS.filter(t => ids.includes(t.id)));
+  }
+  if (/^tutorials\/[^/]+\/complete$/.test(url) && method === 'post') return ok(config, { ok: true });
+  if (/^tutorials\/[^/]+\/save$/.test(url) && (method === 'post' || method === 'delete')) {
+    const id = url.split('/')[1];
+    let ids = await readJSON<string[]>('mock_saved_tutorials', []);
+    ids = method === 'post' ? [...new Set([id, ...ids])] : ids.filter(x => x !== id);
+    await writeJSON('mock_saved_tutorials', ids);
+    return ok(config, { saved: method === 'post' });
+  }
   if (/^tutorials\/[^/]+$/.test(url) && method === 'get') return ok(config, seed.tutorialDetail(url.split('/')[1]));
 
   // ── MATCH ─────────────────────────────────────────────
@@ -271,6 +281,29 @@ export const mockAdapter: AxiosAdapter = async (config) => {
     return ok(config, list);
   }
   if (url === 'products/categories' && method === 'get') return ok(config, seed.PRODUCT_CATEGORIES);
+  if (url === 'products/saved' && method === 'get') {
+    const ids = await readJSON<string[]>('mock_saved_products', []);
+    return ok(config, seed.PRODUCTS.filter(p => ids.includes(p.id)));
+  }
+  if (/^products\/[^/]+\/save$/.test(url) && (method === 'post' || method === 'delete')) {
+    const id = url.split('/')[1];
+    let ids = await readJSON<string[]>('mock_saved_products', []);
+    ids = method === 'post' ? [...new Set([id, ...ids])] : ids.filter(x => x !== id);
+    await writeJSON('mock_saved_products', ids);
+    return ok(config, { saved: method === 'post' });
+  }
+  if (url === 'saved/looks' && method === 'get') return ok(config, await readJSON('mock_saved_looks', []));
+  if (url === 'saved/looks' && method === 'post') {
+    const list = await readJSON<any[]>('mock_saved_looks', []);
+    const next = [{ id: body.id, title: body.title, subtitle: body.subtitle, img: body.img }, ...list.filter(l => l.id !== body.id)];
+    await writeJSON('mock_saved_looks', next);
+    return ok(config, next[0], 201);
+  }
+  if (/^saved\/looks\/[^/]+$/.test(url) && method === 'delete') {
+    const id = url.split('/')[2];
+    await writeJSON('mock_saved_looks', (await readJSON<any[]>('mock_saved_looks', [])).filter(l => l.id !== id));
+    return ok(config, { removed: true });
+  }
   if (/^products\/[^/]+$/.test(url) && method === 'get') return ok(config, seed.productDetail(url.split('/')[1]));
 
   // ── SUBSCRIPTION ──────────────────────────────────────
