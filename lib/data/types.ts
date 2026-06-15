@@ -201,3 +201,104 @@ export interface Routine {
   time: string;
   steps: string[];
 }
+
+/* ── Commerce (server-backed) ───────────────────────────── */
+export interface ServerCartItem {
+  id: string;
+  productId?: string;
+  name: string;
+  brand: string;
+  price: number;
+  shade?: string;
+  img?: string;
+  qty: number;
+}
+export interface ServerCart {
+  items: ServerCartItem[];
+  count: number;
+  subtotal: number;
+}
+export interface CartEstimate {
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  currency: string;
+}
+export interface OrderItem {
+  id: string;
+  productId?: string;
+  name: string;
+  brand: string;
+  price: number;
+  shade?: string;
+  img?: string;
+  qty: number;
+}
+export interface Order {
+  id: string;
+  status: string;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  currency: string;
+  trackingNo?: string;
+  carrier?: string;
+  createdAt: string;
+  items: OrderItem[];
+}
+export interface Address {
+  id: string;
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  region?: string;
+  postcode: string;
+  country: string;
+  phone?: string;
+  isDefault: boolean;
+}
+export interface PaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
+export interface ShippingOption {
+  id: string;
+  label: string;
+  price: number;
+  eta: string;
+}
+export interface Brand {
+  id: string;
+  name: string;
+  logo?: string;
+  description?: string;
+}
+export interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  title?: string;
+  body: string;
+  photos: string[];
+  helpfulCount: number;
+  createdAt: string;
+}
+export interface ServerNotification {
+  id: string;
+  icon: string;
+  bg: string;
+  color: string;
+  title: string;
+  body: string;
+  time: string;
+  read: boolean;
+  route?: string;
+}
