@@ -23,7 +23,7 @@ export default function SettingsScreen() {
 
   const links: { group: string; items: { icon: IName; label: string; route?: string; toastMsg?: string }[] }[] = [
     { group: 'Account', items: [
-      { icon: 'person-outline', label: 'Edit profile', toastMsg: 'Profile editing coming soon' },
+      { icon: 'person-outline', label: 'Edit profile', route: '/(tabs)/profile/edit' },
       { icon: 'lock-closed-outline', label: 'Privacy & data', route: '/(tabs)/profile/privacy' },
       { icon: 'diamond-outline', label: 'Subscription', route: '/(tabs)/profile/subscription' },
     ]},

@@ -14,6 +14,7 @@ import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useBeautyProfileStore } from '@/lib/store/beautyProfileStore';
 import { api } from '@/lib/api';
+import { authApi } from '@/lib/data/endpoints';
 import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
@@ -44,7 +45,23 @@ export default function LoginScreen() {
     }
   };
 
-  const social = (provider: string) => toast.info(`${provider} sign-in coming soon`);
+  const [socialBusy, setSocialBusy] = useState(false);
+  const social = async (provider: 'Google' | 'Apple') => {
+    if (socialBusy) return;
+    setSocialBusy(true);
+    try {
+      // Production: obtain idToken via expo-auth-session (Google/Apple).
+      // Dev: the API derives a stable demo account from this token.
+      const res = await authApi.social(provider.toLowerCase() as 'google' | 'apple', `dollface-${provider.toLowerCase()}-dev`);
+      await setTokens(res.tokens);
+      setUser(res.user);
+      if (res.isNewUser) { router.replace('/(onboarding)/beauty-goals'); }
+      else { setOnboardingComplete(true); router.replace('/(tabs)'); }
+    } catch {
+      toast.error(`${provider} sign-in failed.`);
+      setSocialBusy(false);
+    }
+  };
 
   return (
     <View style={s.root}>
@@ -89,11 +106,11 @@ export default function LoginScreen() {
             </View>
 
             <View style={s.socialCol}>
-              <PressableScale style={s.appleBtn} onPress={() => social('Apple')}>
+              <PressableScale style={s.appleBtn} onPress={() => social('Apple')} disabled={socialBusy}>
                 <AppleIcon size={17} color="#FFFFFF" />
                 <Text style={s.appleText}>Sign in with Apple</Text>
               </PressableScale>
-              <PressableScale style={s.googleBtn} onPress={() => social('Google')}>
+              <PressableScale style={s.googleBtn} onPress={() => social('Google')} disabled={socialBusy}>
                 <GoogleIcon size={17} />
                 <Text style={s.googleText}>Sign in with Google</Text>
               </PressableScale>

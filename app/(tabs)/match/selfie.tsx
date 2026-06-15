@@ -1,15 +1,31 @@
-import { View, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { PressableScale } from '@/components/ui/Motion';
+import { matchApi } from '@/lib/data/endpoints';
+import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
 const TIPS = ['Natural light', 'No filter', 'Face forward', 'No glasses'];
 
 export default function SelfieCaptureScreen() {
-  const handleCapture = () => router.push('/(tabs)/match/results/mock-result-id');
+  const [busy, setBusy] = useState(false);
+
+  const handleCapture = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // Send the captured frame for analysis; the API returns the match result.
+      const result = await matchApi.selfie(new FormData());
+      router.replace(`/(tabs)/match/results/${result.id}` as any);
+    } catch {
+      toast.error('Scan failed — please try again.');
+      setBusy(false);
+    }
+  };
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
@@ -44,10 +60,10 @@ export default function SelfieCaptureScreen() {
       </View>
 
       <View style={s.controls}>
-        <PressableScale style={s.shutter} onPress={handleCapture} scaleTo={0.92}>
-          <View style={s.shutterInner} />
+        <PressableScale style={s.shutter} onPress={handleCapture} scaleTo={0.92} disabled={busy}>
+          {busy ? <ActivityIndicator color={Colors.brand.plum} /> : <View style={s.shutterInner} />}
         </PressableScale>
-        <Text style={s.cancel} onPress={() => router.back()}>Cancel</Text>
+        <Text style={s.cancel} onPress={() => router.back()}>{busy ? 'Analysing…' : 'Cancel'}</Text>
       </View>
     </SafeAreaView>
   );

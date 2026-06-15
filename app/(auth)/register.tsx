@@ -12,7 +12,9 @@ import { AuthHeader } from '@/components/layout/AuthHeader';
 import { PressableScale } from '@/components/ui/Motion';
 import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useBeautyProfileStore } from '@/lib/store/beautyProfileStore';
 import { api } from '@/lib/api';
+import { authApi } from '@/lib/data/endpoints';
 import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
@@ -37,8 +39,25 @@ const STRENGTH_COLOR = ['#E0D6DA', '#C0392B', '#E8A838', '#4CAF6E', '#2D6A4F'];
 
 export default function RegisterScreen() {
   const [showPw, setShowPw] = useState(false);
+  const [socialBusy, setSocialBusy] = useState(false);
   const insets = useSafeAreaInsets();
   const { setUser, setTokens } = useAuthStore();
+  const setOnboardingComplete = useBeautyProfileStore(s => s.setOnboardingComplete);
+
+  const social = async (provider: 'Google' | 'Apple') => {
+    if (socialBusy) return;
+    setSocialBusy(true);
+    try {
+      const res = await authApi.social(provider.toLowerCase() as 'google' | 'apple', `dollface-${provider.toLowerCase()}-dev`);
+      await setTokens(res.tokens);
+      setUser(res.user);
+      if (res.isNewUser) { router.replace('/(onboarding)/beauty-goals'); }
+      else { setOnboardingComplete(true); router.replace('/(tabs)'); }
+    } catch {
+      toast.error(`${provider} sign-up failed.`);
+      setSocialBusy(false);
+    }
+  };
 
   const { control, handleSubmit, setError, watch, formState: { errors, isSubmitting } } =
     useForm<F>({ resolver: zodResolver(schema), defaultValues: { name: '', email: '', password: '', confirmPassword: '' } });
@@ -116,11 +135,11 @@ export default function RegisterScreen() {
             </View>
 
             <View style={s.socialCol}>
-              <PressableScale style={s.appleBtn} onPress={() => toast.info('Apple sign-up coming soon')}>
+              <PressableScale style={s.appleBtn} onPress={() => social('Apple')} disabled={socialBusy}>
                 <AppleIcon size={17} color="#FFFFFF" />
                 <Text style={s.appleText}>Sign up with Apple</Text>
               </PressableScale>
-              <PressableScale style={s.googleBtn} onPress={() => toast.info('Google sign-up coming soon')}>
+              <PressableScale style={s.googleBtn} onPress={() => social('Google')} disabled={socialBusy}>
                 <GoogleIcon size={17} />
                 <Text style={s.googleText}>Sign up with Google</Text>
               </PressableScale>

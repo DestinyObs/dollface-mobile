@@ -150,6 +150,40 @@ export const mockAdapter: AxiosAdapter = async (config) => {
     return ok(config, { user: publicUser(last) });
   }
 
+  // Social login — derive a stable demo account per provider.
+  const socialMatch = url.match(/^auth\/social\/(google|apple)$/);
+  if (socialMatch && method === 'post') {
+    const provider = socialMatch[1];
+    const email = `${provider}.demo@dollface.app`;
+    const users = await readUsers();
+    let user = users.find(u => u.email === email);
+    let isNewUser = false;
+    if (!user) {
+      isNewUser = true;
+      user = { id: `u_${Date.now()}`, name: `${provider[0].toUpperCase()}${provider.slice(1)} User`, email, password: '', createdAt: new Date().toISOString() };
+      users.push(user);
+      await writeUsers(users);
+    }
+    return ok(config, { user: publicUser(user), tokens: makeTokens(user.id), isNewUser });
+  }
+
+  // ── ACCOUNT ───────────────────────────────────────────
+  if (url === 'me' && method === 'patch') {
+    return ok(config, { id: 'me', name: body.name, email: 'you@dollface.app', avatarUrl: body.avatarUrl, bio: body.bio });
+  }
+
+  // ── SEARCH ────────────────────────────────────────────
+  if (url === 'search' && method === 'get') {
+    const q = String(config.params?.q ?? '').toLowerCase();
+    const match = (t: string) => t.toLowerCase().includes(q);
+    return ok(config, {
+      products: q ? seed.PRODUCTS.filter(p => match(p.name) || match(p.brand)) : [],
+      tutorials: q ? seed.TUTORIALS.filter(t => match(t.title)) : [],
+      looks: q ? seed.HOME_FEED.trendingLooks.filter(l => match(l.label)) : [],
+      brands: [],
+    });
+  }
+
   // ── BEAUTY PROFILE ────────────────────────────────────
   if (url === 'beauty-profile' && (method === 'put' || method === 'patch')) return ok(config, body);
   if (url === 'beauty-profile' && method === 'get') return ok(config, {});
