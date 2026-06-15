@@ -1,10 +1,14 @@
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
+import { subscriptionApi } from '@/lib/data/endpoints';
+import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
 type IName = React.ComponentProps<typeof Ionicons>['name'];
@@ -19,6 +23,22 @@ const PERKS: { icon: IName; label: string; desc: string }[] = [
 
 export default function PremiumPaywallScreen() {
   const insets = useSafeAreaInsets();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const subscribe = async (plan: 'pro' | 'monthly') => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await subscriptionApi.checkout(plan);
+      qc.invalidateQueries({ queryKey: ['subscription'] });
+      toast.success('Welcome to DollFace Pro — your trial has started!');
+      router.back();
+    } catch {
+      toast.error('Could not start your subscription. Try again.');
+      setBusy(false);
+    }
+  };
 
   return (
     <View style={s.root}>
@@ -64,11 +84,15 @@ export default function PremiumPaywallScreen() {
             <Text style={s.priceNote}>Just £4.17 per month</Text>
           </View>
 
-          <PressableScale style={s.primaryBtn} onPress={() => {}}>
-            <Text style={s.primaryText}>Start 7-Day Free Trial</Text>
-            <Ionicons name="arrow-forward" size={16} color={Colors.brand.plum} />
+          <PressableScale style={s.primaryBtn} onPress={() => subscribe('pro')} disabled={busy}>
+            {busy ? <ActivityIndicator color={Colors.brand.plum} /> : (
+              <>
+                <Text style={s.primaryText}>Start 7-Day Free Trial</Text>
+                <Ionicons name="arrow-forward" size={16} color={Colors.brand.plum} />
+              </>
+            )}
           </PressableScale>
-          <PressableScale style={s.monthlyBtn} onPress={() => {}}>
+          <PressableScale style={s.monthlyBtn} onPress={() => subscribe('monthly')} disabled={busy}>
             <Text style={s.monthlyText}>Monthly Plan — £7.99/mo</Text>
           </PressableScale>
           <Text style={s.legal}>7-day free trial · Cancel anytime</Text>

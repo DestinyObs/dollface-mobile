@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { PressableScale } from '@/components/ui/Motion';
+import { matchApi } from '@/lib/data/endpoints';
+import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
 const CATEGORIES = ['Foundation', 'Concealer', 'Powder', 'Blush', 'Bronzer', 'Lip'];
@@ -15,6 +17,19 @@ export default function ManualShadeScreen() {
   const [shade, setShade] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('Foundation');
+  const [busy, setBusy] = useState(false);
+
+  const onFind = async () => {
+    if (!shade.trim() || busy) return;
+    setBusy(true);
+    try {
+      const result = await matchApi.manual({ shade: shade.trim(), brand: brand.trim() || undefined, category });
+      router.push(`/(tabs)/match/results/${result.id}` as any);
+    } catch {
+      toast.error('Could not find matches. Try again.');
+      setBusy(false);
+    }
+  };
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -42,9 +57,13 @@ export default function ManualShadeScreen() {
       </ScrollView>
 
       <View style={s.footer}>
-        <PressableScale style={[s.cta, !shade && s.ctaDisabled]} onPress={() => shade && router.push('/(tabs)/match/results/manual-result')} disabled={!shade}>
-          <Text style={s.ctaText}>Find Matches</Text>
-          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+        <PressableScale style={[s.cta, (!shade.trim() || busy) && s.ctaDisabled]} onPress={onFind} disabled={!shade.trim() || busy}>
+          {busy ? <ActivityIndicator color="#FFFFFF" /> : (
+            <>
+              <Text style={s.ctaText}>Find Matches</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+            </>
+          )}
         </PressableScale>
       </View>
     </SafeAreaView>
