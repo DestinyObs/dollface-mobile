@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { BrandSplash } from '@/components/layout/BrandSplash';
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -158,13 +159,15 @@ export default function RootLayout() {
       <SafeAreaProvider initialMetrics={IS_WEB ? WEB_INSETS : undefined}>
         <QueryClientProvider client={queryClient}>
           <StatusBar style={showSplash ? 'light' : 'dark'} />
-          {IS_WEB ? (
-            // On web the browser reports 0 safe-area, which would let content
-            // slide under the status bar / island. Force the device insets.
-            <SafeAreaInsetsContext.Provider value={{ top: 52, bottom: 28, left: 0, right: 0 }}>
-              {app}
-            </SafeAreaInsetsContext.Provider>
-          ) : app}
+          <ErrorBoundary>
+            {IS_WEB ? (
+              // On web the browser reports 0 safe-area, which would let content
+              // slide under the status bar / island. Force the device insets.
+              <SafeAreaInsetsContext.Provider value={{ top: 52, bottom: 28, left: 0, right: 0 }}>
+                {app}
+              </SafeAreaInsetsContext.Provider>
+            ) : app}
+          </ErrorBoundary>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
