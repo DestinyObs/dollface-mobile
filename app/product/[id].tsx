@@ -12,6 +12,7 @@ import { useCartStore } from '@/lib/store/cartStore';
 import { useSavedStore } from '@/lib/store/savedStore';
 import { toast } from '@/lib/store/toastStore';
 import { useProduct } from '@/lib/data/hooks';
+import { ProductReviews } from '@/components/product/ProductReviews';
 import { Colors } from '@/constants/colors';
 
 export default function ProductDetailScreen() {
@@ -75,6 +76,10 @@ export default function ProductDetailScreen() {
                 </PressableScale>
               ))}
             </View>
+          </Reveal>
+
+          <Reveal delay={200}>
+            <ProductReviews productId={product.id} />
           </Reveal>
         </View>
       </ScrollView>

@@ -53,6 +53,19 @@ const cartShape = (items: MockCartItem[]) => ({
   subtotal: items.reduce((n, i) => n + i.price * i.qty, 0),
 });
 
+const SEED_REVIEWS = [
+  { id: 'rs1', author: 'Amara O.', rating: 5, title: 'Perfect match', body: 'The shade match was spot on — best foundation I\'ve found for my undertone.', photos: [], helpfulCount: 24, createdAt: new Date(Date.now() - 3 * 86400000).toISOString() },
+  { id: 'rs2', author: 'Priya S.', rating: 4, title: 'Great coverage', body: 'Lasts all day and doesn\'t look cakey. Wish it had more shades in the deep range.', photos: [], helpfulCount: 11, createdAt: new Date(Date.now() - 9 * 86400000).toISOString() },
+  { id: 'rs3', author: 'Jess M.', rating: 5, title: 'Holy grail', body: 'Repurchased three times now. The satin finish is unreal.', photos: [], helpfulCount: 7, createdAt: new Date(Date.now() - 20 * 86400000).toISOString() },
+];
+
+const SEED_BRANDS = [
+  { id: 'fenty-beauty', name: 'Fenty Beauty', description: 'Inclusive beauty for all skin tones.' },
+  { id: 'mac', name: 'MAC', description: 'Professional makeup artistry.' },
+  { id: 'rare-beauty', name: 'Rare Beauty', description: 'Makeup made to feel good in.' },
+  { id: 'charlotte-tilbury', name: 'Charlotte Tilbury', description: 'Red-carpet glamour.' },
+];
+
 const NOTIF_SEED = [
   { id: 'n1', icon: 'color-palette', bg: '#F5EAEF', color: '#753248', title: 'New shade match ready', body: 'We found 3 new foundations matching your tone.', time: '2h', read: false, route: '/(tabs)/match' },
   { id: 'n2', icon: 'book', bg: '#EAF7EF', color: '#2F7D52', title: 'Tutorial picked for you', body: '"The Glass Skin Method" matches your goals.', time: '5h', read: false, route: '/(tabs)/learn' },
@@ -419,6 +432,25 @@ export const mockAdapter: AxiosAdapter = async (config) => {
     await writeJSON('mock_notifications', n);
     return ok(config, { ok: true });
   }
+
+  // ── REVIEWS ───────────────────────────────────────────
+  if (/^products\/[^/]+\/reviews$/.test(url) && method === 'get') {
+    const pid = url.split('/')[1];
+    const all = await readJSON<Record<string, any[]>>('mock_reviews', {});
+    return ok(config, all[pid] ?? SEED_REVIEWS);
+  }
+  if (/^products\/[^/]+\/reviews$/.test(url) && method === 'post') {
+    const pid = url.split('/')[1];
+    const all = await readJSON<Record<string, any[]>>('mock_reviews', {});
+    const review = { id: `r_${Date.now()}`, author: 'You', rating: body.rating, title: body.title, body: body.body, photos: body.photos ?? [], helpfulCount: 0, createdAt: new Date().toISOString() };
+    all[pid] = [review, ...(all[pid] ?? SEED_REVIEWS)];
+    await writeJSON('mock_reviews', all);
+    return ok(config, review, 201);
+  }
+  if (/^reviews\/[^/]+\/helpful$/.test(url) && method === 'post') return ok(config, { helpful: true });
+
+  // ── BRANDS ────────────────────────────────────────────
+  if (url === 'brands' && method === 'get') return ok(config, SEED_BRANDS);
 
   // ── FALLBACK ──────────────────────────────────────────
   // Any other endpoint returns an empty success so screens that
