@@ -70,6 +70,24 @@ export const subscriptionApi = {
 /* ── 3.2 / 3.4 Account & beauty profile ─────────────────── */
 export const meApi = {
   stats: () => http.get<MeStats>('/me/stats'),
+  update: (body: { name?: string; bio?: string; avatarUrl?: string }) => http.patch<{ id: string; name: string; email: string; avatarUrl?: string; bio?: string }>('/me', body),
+};
+
+/* ── 3.22 Search ────────────────────────────────────────── */
+export interface SearchResults {
+  products: import('./types').ProductSummary[];
+  tutorials: import('./types').TutorialSummary[];
+  looks: import('./types').TrendingLook[];
+  brands: { id: string; name: string; logo?: string }[];
+}
+export const searchApi = {
+  global: (q: string) => http.get<SearchResults>('/search', { q }),
+};
+
+/* ── 3.1 Social auth ────────────────────────────────────── */
+export const authApi = {
+  social: (provider: 'google' | 'apple', idToken: string) =>
+    http.post<{ user: import('@/types/auth').User; tokens: import('@/types/auth').AuthTokens; isNewUser: boolean }>(`/auth/social/${provider}`, { idToken }),
 };
 
 export const beautyProfileApi = {

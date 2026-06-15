@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
+import { recreateApi } from '@/lib/data/endpoints';
 import { Colors } from '@/constants/colors';
 
 const STEPS = [
@@ -18,11 +19,15 @@ const STEPS = [
 export default function AnalyzingScreen() {
   const [active, setActive] = useState(0);
   const spin = useRef(new Animated.Value(0)).current;
+  const recId = useRef<string | null>(null);
 
   useEffect(() => {
+    // Kick off the real analysis; navigate to whatever id the API returns.
+    recreateApi.upload(new FormData()).then(r => { recId.current = r.id; }).catch(() => {});
+
     Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1400, easing: Easing.linear, useNativeDriver: true })).start();
     const iv = setInterval(() => setActive(a => Math.min(a + 1, STEPS.length)), 680);
-    const done = setTimeout(() => router.replace('/(tabs)/recreate/mock-recreation-id' as any), 3600);
+    const done = setTimeout(() => router.replace(`/(tabs)/recreate/${recId.current ?? 'mock-recreation-id'}` as any), 3600);
     return () => { clearInterval(iv); clearTimeout(done); };
   }, []);
 

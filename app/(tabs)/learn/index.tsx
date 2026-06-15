@@ -31,7 +31,7 @@ export default function LearnScreen() {
           <Text style={s.eyebrow}>TUTORIALS</Text>
           <Text style={s.title}>Learn</Text>
         </View>
-        <PressableScale style={s.iconBtn} onPress={() => toast.info('Search coming soon')}>
+        <PressableScale style={s.iconBtn} onPress={() => router.push('/search')}>
           <Ionicons name="search-outline" size={18} color={Colors.text.secondary} />
         </PressableScale>
       </View>

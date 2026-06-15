@@ -95,7 +95,7 @@ export default function ProfileScreen() {
                 <Text style={s.planText}>Free Plan</Text>
               </View>
             </View>
-            <PressableScale onPress={() => router.push('/(tabs)/profile/settings')} style={s.editBtn}>
+            <PressableScale onPress={() => router.push('/(tabs)/profile/edit')} style={s.editBtn}>
               <Ionicons name="create-outline" size={16} color={Colors.text.secondary} />
             </PressableScale>
           </View>
