@@ -10,12 +10,6 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Next.js / web landing page (web/)
-web/.next/
-web/out/
-web/build/
-web/.vercel/
-web/next-env.d.ts
 
 # Native
 .kotlin/
