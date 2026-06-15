@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { loadJSON, saveJSON } from '@/lib/persist';
 import { cartApi } from '@/lib/data/endpoints';
+import { cartCount, cartSubtotal } from '@/lib/cartMath';
 import type { ServerCartItem } from '@/lib/data/types';
 
 /**
@@ -71,6 +72,6 @@ export const useCartStore = create<CartState>((set, get) => ({
     cartApi.clear().catch(() => {});
   },
 
-  count: () => get().items.reduce((n, i) => n + i.qty, 0),
-  subtotal: () => get().items.reduce((n, i) => n + i.price * i.qty, 0),
+  count: () => cartCount(get().items),
+  subtotal: () => cartSubtotal(get().items),
 }));
