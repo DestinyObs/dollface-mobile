@@ -11,6 +11,7 @@ import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage, AppImageBackground } from '@/components/ui/AppImage';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useNotificationStore } from '@/lib/store/notificationStore';
+import { useHomeFeed } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 import { Img } from '@/constants/images';
 
@@ -27,24 +28,18 @@ const ACTIONS: { icon: IName; label: string; route: string; color: string; bg: s
   { icon: 'bag-handle',    label: 'Shop',     route: '/product',         color: '#A06A2C',         bg: '#FBF1E6' },
 ];
 
-const LOOKS = [
-  { label: 'Soft Glam',  meta: '2.4k saves', level: 'Easy',   img: Img.looks.softGlam },
-  { label: 'Glass Skin', meta: '1.9k saves', level: 'Medium', img: Img.looks.glassSkin },
-  { label: 'Bold Lip',   meta: '3.1k saves', level: 'Easy',   img: Img.looks.boldLip },
-  { label: 'Bronzed',    meta: '1.2k saves', level: 'Medium', img: Img.looks.bronzed },
-];
-
-const COURSES = [
-  { title: 'Foundation Basics',   meta: '8 min left',  pct: 60, img: Img.tutorials.foundation },
-  { title: 'Winged Liner Master', meta: '12 min left', pct: 25, img: Img.tutorials.smokyEye },
-];
-
 const LEVEL_COLOR: Record<string, string> = { Easy: '#2F7D52', Medium: '#A06A2C', Hard: Colors.brand.plum };
 
 export default function HomeScreen() {
   const user = useAuthStore(s => s.user);
   const name = user?.name?.split(' ')[0] ?? 'Lovely';
   const unread = useNotificationStore(s => s.notifications.filter(n => !n.read).length);
+
+  const { data: feed } = useHomeFeed();
+  const looks = feed?.trendingLooks ?? [];
+  const courses = feed?.continueLearning ?? [];
+  const shade = feed?.matchedShade;
+  const streak = feed?.streak ?? 0;
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -59,7 +54,7 @@ export default function HomeScreen() {
             </View>
             <View style={s.streak}>
               <Ionicons name="flame" size={13} color="#E8743B" />
-              <Text style={s.streakText}>12</Text>
+              <Text style={s.streakText}>{streak}</Text>
             </View>
             <PressableScale onPress={() => router.push('/notifications')} style={s.bellBtn}>
               <Ionicons name="notifications-outline" size={18} color={Colors.brand.plum} />
@@ -71,13 +66,13 @@ export default function HomeScreen() {
         {/* ── Your shade (creative content) ── */}
         <Reveal delay={70}>
           <PressableScale scaleTo={0.99} onPress={() => router.push('/(tabs)/match')} style={s.shadeCard}>
-            <View style={s.swatch} />
+            <View style={[s.swatch, shade ? { backgroundColor: shade.hex } : null]} />
             <View style={{ flex: 1 }}>
               <Text style={s.shadeEye}>YOUR MATCHED SHADE</Text>
-              <Text style={s.shadeName}>Warm Ivory 2.0</Text>
-              <Text style={s.shadeMeta}>NARS Light Reflecting · 92% match</Text>
+              <Text style={s.shadeName}>{shade?.name ?? 'Match your shade'}</Text>
+              <Text style={s.shadeMeta}>{shade?.product ?? 'Scan your tone in 60 seconds'}</Text>
             </View>
-            <View style={s.shadePct}><Text style={s.shadePctText}>92%</Text></View>
+            <View style={s.shadePct}><Text style={s.shadePctText}>{shade ? `${shade.matchPct}%` : '—'}</Text></View>
           </PressableScale>
         </Reveal>
 
@@ -127,8 +122,8 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.looksRow}>
-              {LOOKS.map(l => (
-                <PressableScale key={l.label} onPress={() => router.push('/(tabs)/recreate')} scaleTo={0.97} style={s.lookItem}>
+              {looks.map(l => (
+                <PressableScale key={l.id} onPress={() => router.push('/(tabs)/recreate')} scaleTo={0.97} style={s.lookItem}>
                   <AppImageBackground uri={l.img} style={s.lookThumb} imageStyle={s.lookImg}>
                     <View style={[s.levelTag, { backgroundColor: LEVEL_COLOR[l.level] }]}>
                       <Text style={s.levelTagText}>{l.level}</Text>
@@ -154,8 +149,8 @@ export default function HomeScreen() {
                 <Text style={s.seeAll}>See all</Text>
               </TouchableOpacity>
             </View>
-            {COURSES.map(c => (
-              <PressableScale key={c.title} onPress={() => router.push('/(tabs)/learn')} scaleTo={0.985} style={s.courseCard}>
+            {courses.map(c => (
+              <PressableScale key={c.id} onPress={() => router.push('/(tabs)/learn')} scaleTo={0.985} style={s.courseCard}>
                 <AppImage uri={c.img} style={s.courseThumb} />
                 <View style={s.courseContent}>
                   <Text style={s.courseTitle}>{c.title}</Text>

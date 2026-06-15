@@ -1,34 +1,22 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { ScreenLoader } from '@/components/ui/ScreenLoader';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { toast } from '@/lib/store/toastStore';
+import { useMatchResult } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 
-const RESULTS = [
-  {
-    category: 'Foundation', confidence: 'High', matchedShade: '220 Natural Beige', brand: 'Fenty Beauty',
-    product: "Pro Filt'r Soft Matte", hex: '#C4875A',
-    reason: 'Matched to your medium-tan tone with warm golden undertones across Fenty\'s inclusive range.',
-    alternatives: [
-      { brand: 'MAC', product: 'Studio Fix Fluid', shade: 'NC40', hex: '#C48558', price: '£29' },
-      { brand: 'NYX', product: "Can't Stop Won't Stop", shade: 'Warm Caramel', hex: '#C28050', price: '£13' },
-    ],
-  },
-  {
-    category: 'Concealer', confidence: 'High', matchedShade: '320W', brand: 'Fenty Beauty',
-    product: "Pro Filt'r Instant Retouch", hex: '#CAA070',
-    reason: 'One shade lighter than your foundation to brighten under-eye coverage.',
-    alternatives: [
-      { brand: 'Charlotte Tilbury', product: 'Magic Away', shade: '8 Medium', hex: '#C89A60', price: '£28' },
-    ],
-  },
-];
-
 export default function ShadeMatchResultsScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: result } = useMatchResult(id ?? 'mock-result-id');
+
+  if (!result) return <ScreenLoader />;
+  const RESULTS = result.items;
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <ScreenHeader title="Your Shade Matches" rightIcon="share-outline" />
@@ -37,13 +25,13 @@ export default function ShadeMatchResultsScreen() {
         {/* Skin tone summary */}
         <Reveal delay={40}>
           <View style={s.summary}>
-            <View style={[s.toneSwatch, { backgroundColor: '#C4875A' }]} />
+            <View style={[s.toneSwatch, { backgroundColor: result.tone.hex }]} />
             <View style={{ flex: 1 }}>
-              <Text style={s.toneTitle}>Medium Tan · Warm Golden</Text>
-              <Text style={s.toneSub}>Based on your selfie analysis</Text>
+              <Text style={s.toneTitle}>{result.tone.label}</Text>
+              <Text style={s.toneSub}>{result.tone.sub}</Text>
               <View style={s.confChip}>
                 <Ionicons name="checkmark-circle" size={12} color={Colors.status.success} />
-                <Text style={s.confText}>High confidence match</Text>
+                <Text style={s.confText}>{result.tone.confidence}</Text>
               </View>
             </View>
           </View>

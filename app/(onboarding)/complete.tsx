@@ -8,7 +8,7 @@ import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage } from '@/components/ui/AppImage';
 import { useBeautyProfileStore } from '@/lib/store/beautyProfileStore';
 import { useAuthStore } from '@/lib/store/authStore';
-import { api } from '@/lib/api';
+import { beautyProfileApi } from '@/lib/data/endpoints';
 import { Colors } from '@/constants/colors';
 import { Img } from '@/constants/images';
 
@@ -28,7 +28,8 @@ export default function OnboardingCompleteScreen() {
 
   const handleStart = async () => {
     try {
-      await api.post('/beauty-profile', profile);
+      await beautyProfileApi.upsert(profile);
+      await beautyProfileApi.complete();
     } catch {}
     setOnboardingComplete(true);
     router.replace('/(tabs)');

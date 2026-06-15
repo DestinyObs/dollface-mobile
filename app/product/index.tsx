@@ -10,32 +10,24 @@ import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage } from '@/components/ui/AppImage';
 import { useCartStore } from '@/lib/store/cartStore';
 import { toast } from '@/lib/store/toastStore';
+import { useProducts, useProductCategories } from '@/lib/data/hooks';
+import type { ProductSummary } from '@/lib/data/types';
 import { Colors } from '@/constants/colors';
-import { Img } from '@/constants/images';
-
-const CATEGORIES = ['All', 'Foundation', 'Concealer', 'Blush', 'Bronzer', 'Lips', 'Primer'];
-
-const PRODUCTS = [
-  { id: '1', name: "Pro Filt'r Soft Matte Foundation", brand: 'Fenty Beauty', category: 'Foundation', price: '£34', rating: '4.8', img: Img.products.a },
-  { id: '2', name: 'Studio Fix Fluid SPF15', brand: 'MAC', category: 'Foundation', price: '£31', rating: '4.6', img: Img.products.b },
-  { id: '3', name: 'Fit Me Matte + Poreless', brand: 'Maybelline', category: 'Foundation', price: '£10', rating: '4.5', img: Img.products.c },
-  { id: '4', name: 'Soft Pinch Liquid Blush', brand: 'Rare Beauty', category: 'Blush', price: '£22', rating: '4.9', img: Img.products.d },
-  { id: '5', name: 'Hoola Matte Bronzer', brand: 'Benefit', category: 'Bronzer', price: '£30', rating: '4.7', img: Img.products.a },
-  { id: '6', name: 'Pillow Talk Lipstick', brand: 'Charlotte Tilbury', category: 'Lips', price: '£30', rating: '4.8', img: Img.products.b },
-];
 
 export default function ProductBrowserScreen() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const add = useCartStore(s => s.add);
   const cartCount = useCartStore(s => s.count)();
+  const { data: products = [] } = useProducts();
+  const { data: categories = [] } = useProductCategories();
 
-  const filtered = PRODUCTS.filter(p =>
+  const filtered = products.filter(p =>
     (category === 'All' || p.category === category) &&
     (p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const addToBag = (p: typeof PRODUCTS[number]) => {
+  const addToBag = (p: ProductSummary) => {
     add({ id: p.id, name: p.name, brand: p.brand, price: parseFloat(p.price.replace('£', '')), img: p.img });
     toast.success(`${p.brand} added to bag`);
   };
@@ -49,7 +41,7 @@ export default function ProductBrowserScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.cats} contentContainerStyle={s.catsScroll}>
-        {CATEGORIES.map(c => (
+        {categories.map(c => (
           <PressableScale key={c} scaleTo={0.95} onPress={() => setCategory(c)} style={[s.chip, category === c && s.chipActive]}>
             <Text style={[s.chipText, { color: category === c ? '#FFFFFF' : Colors.text.secondary }]}>{c}</Text>
           </PressableScale>

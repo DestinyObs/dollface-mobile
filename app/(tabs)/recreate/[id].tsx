@@ -1,29 +1,27 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { ScreenLoader } from '@/components/ui/ScreenLoader';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { useSavedStore } from '@/lib/store/savedStore';
 import { toast } from '@/lib/store/toastStore';
+import { useRecreation } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 
 type IName = React.ComponentProps<typeof Ionicons>['name'];
 
-const VERSIONS = ['Your Version', 'Beginner', 'Budget'];
-
-const SECTIONS: { area: string; icon: IName; label: string; description: string; technique: string; products: { name: string; brand: string; shade: string; price: string }[] }[] = [
-  { area: 'BASE', icon: 'sparkles-outline', label: 'Base Makeup', description: 'Full-coverage foundation blended seamlessly for a glass-skin effect.', technique: 'Apply with a damp beauty sponge using pressing motions for seamless coverage.', products: [ { name: "Pro Filt'r Soft Matte", brand: 'Fenty Beauty', shade: '220N', price: '£34' }, { name: "Instant Retouch Concealer", brand: 'Fenty Beauty', shade: '320W', price: '£27' } ] },
-  { area: 'BROWS', icon: 'pencil-outline', label: 'Brows', description: 'Full, defined brows with a slightly arched shape. Focus definition at the tail.', technique: 'Use feathery strokes to mimic natural hairs. Brush up and set with clear gel.', products: [ { name: 'Gimme Brow+', brand: 'Benefit', shade: '4', price: '£26' } ] },
-  { area: 'EYES', icon: 'eye-outline', label: 'Eye Look', description: 'Soft brown smoky eye with warm copper in the crease and black liner.', technique: 'Blend matte brown in the crease first, build depth with copper on the lid.', products: [ { name: 'Naked3 Palette', brand: 'Urban Decay', shade: 'Various', price: '£41' } ] },
-  { area: 'CHEEKS', icon: 'flower-outline', label: 'Cheeks', description: 'Warm bronzer sculpted along the cheekbones. Peachy-pink blush on the apples.', technique: 'Bronzer in a 3-shape from temples to jaw. Blush on apples blended upward.', products: [ { name: 'Hoola Bronzer', brand: 'Benefit', shade: 'Medium', price: '£30' } ] },
-  { area: 'LIPS', icon: 'heart-outline', label: 'Lips', description: 'Nude-mauve liner with a satin lipstick slightly overlined for fullness.', technique: 'Slightly overline the cupid\'s bow. Fill with liner before applying lipstick.', products: [ { name: 'Lip Cheat Liner', brand: 'Charlotte Tilbury', shade: 'Pillowtalk', price: '£19' } ] },
-];
-
 export default function LookRecreationScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: recreation } = useRecreation(id ?? 'mock-recreation-id');
   const [version, setVersion] = useState(0);
+
+  if (!recreation) return <ScreenLoader />;
+  const VERSIONS = recreation.versions;
+  const SECTIONS = recreation.sections;
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -43,7 +41,7 @@ export default function LookRecreationScreen() {
         <Reveal delay={90}>
           <View style={s.aiNote}>
             <View style={s.aiIcon}><Ionicons name="sparkles" size={14} color="#FFFFFF" /></View>
-            <Text style={s.aiText}>This version adapts the look for your medium-tan skin tone and warm undertone. All shades re-matched to your profile.</Text>
+            <Text style={s.aiText}>{recreation.aiNote}</Text>
           </View>
         </Reveal>
 
@@ -51,7 +49,7 @@ export default function LookRecreationScreen() {
           <Reveal key={sec.area} delay={140 + i * 60}>
             <View style={s.card}>
               <View style={s.cardHead}>
-                <View style={s.cardIcon}><Ionicons name={sec.icon} size={18} color={Colors.brand.plum} /></View>
+                <View style={s.cardIcon}><Ionicons name={sec.icon as IName} size={18} color={Colors.brand.plum} /></View>
                 <Text style={s.cardLabel}>{sec.label}</Text>
               </View>
               <Text style={s.cardDesc}>{sec.description}</Text>

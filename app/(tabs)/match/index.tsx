@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImageBackground } from '@/components/ui/AppImage';
+import { useRecentMatches } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 import { Img } from '@/constants/images';
 
@@ -23,13 +24,9 @@ const CATEGORIES: { label: string; icon: IName; bg: string; color: string }[] = 
   { label: 'Powder',     icon: 'sparkles-outline',  bg: Colors.blush,    color: Colors.brand.plum },
 ];
 
-const RECENT = [
-  { name: 'Warm Ivory 2.0', brand: 'NARS', pct: '92%', color: '#E8C9A8' },
-  { name: 'Honey Beige',    brand: 'Fenty', pct: '88%', color: '#D2A878' },
-  { name: 'Golden Sand',    brand: 'MAC',   pct: '85%', color: '#C99B68' },
-];
-
 export default function MatchScreen() {
+  const { data: recent = [] } = useRecentMatches();
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -82,8 +79,8 @@ export default function MatchScreen() {
               <TouchableOpacity hitSlop={8}><Text style={s.seeAll}>History</Text></TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.recentRow}>
-              {RECENT.map(r => (
-                <View key={r.name} style={s.recentCard}>
+              {recent.map(r => (
+                <View key={r.id} style={s.recentCard}>
                   <View style={[s.recentSwatch, { backgroundColor: r.color }]} />
                   <Text style={s.recentName} numberOfLines={1}>{r.name}</Text>
                   <Text style={s.recentBrand}>{r.brand} · {r.pct}</Text>

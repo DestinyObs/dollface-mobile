@@ -6,12 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
+import { ScreenLoader } from '@/components/ui/ScreenLoader';
+import { useSubscription } from '@/lib/data/hooks';
 import { Colors } from '@/constants/colors';
 
-const FREE = ['3 shade matches per day', '2 look recreations per day', 'Beginner tutorials'];
-const PRO = ['Unlimited shade matching', 'Unlimited recreations', 'Full tutorial library', 'AI beauty advisor', 'Ad-free experience'];
-
 export default function SubscriptionScreen() {
+  const { data: sub } = useSubscription();
+  if (!sub) return <ScreenLoader />;
+  const FREE = sub.current.features;
+  const PRO = sub.pro.features;
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <ScreenHeader title="Subscription" />
@@ -22,9 +26,9 @@ export default function SubscriptionScreen() {
             <View style={s.currentTop}>
               <View>
                 <Text style={s.currentEye}>CURRENT PLAN</Text>
-                <Text style={s.currentName}>Free</Text>
+                <Text style={s.currentName}>{sub.current.name}</Text>
               </View>
-              <View style={s.freeBadge}><Text style={s.freeBadgeText}>Active</Text></View>
+              <View style={s.freeBadge}><Text style={s.freeBadgeText}>{sub.status}</Text></View>
             </View>
             {FREE.map(f => (
               <View key={f} style={s.freeRow}>
@@ -41,8 +45,8 @@ export default function SubscriptionScreen() {
             <View style={s.proHead}>
               <View style={s.proCrest}><Ionicons name="diamond" size={18} color="#FFFFFF" /></View>
               <View>
-                <Text style={s.proEye}>DOLLFACE PRO</Text>
-                <Text style={s.proPrice}>£49.99<Text style={s.proUnit}> / year</Text></Text>
+                <Text style={s.proEye}>{sub.pro.name.toUpperCase()}</Text>
+                <Text style={s.proPrice}>{sub.pro.price}<Text style={s.proUnit}> {sub.pro.unit}</Text></Text>
               </View>
             </View>
             {PRO.map(p => (
