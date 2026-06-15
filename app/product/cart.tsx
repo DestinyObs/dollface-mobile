@@ -72,7 +72,7 @@ export default function CartScreen() {
       </ScrollView>
 
       <View style={s.footer}>
-        <PressableScale style={s.cta} onPress={() => { clear(); toast.success('Order placed — thank you!'); router.replace('/(tabs)'); }}>
+        <PressableScale style={s.cta} onPress={() => router.push('/product/checkout')}>
           <Ionicons name="lock-closed" size={15} color="#FFFFFF" />
           <Text style={s.ctaText}>Checkout · £{(subtotal + shipping).toFixed(2)}</Text>
         </PressableScale>

@@ -35,6 +35,31 @@ async function writeUsers(users: StoredUser[]) {
   await storage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
+// Generic persisted mock state (cart, orders, addresses, payments, notifications…)
+async function readJSON<T>(key: string, fallback: T): Promise<T> {
+  try {
+    const raw = await storage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+const writeJSON = (key: string, val: unknown) => storage.setItem(key, JSON.stringify(val));
+
+type MockCartItem = { id: string; productId?: string; name: string; brand: string; price: number; shade?: string; img?: string; qty: number };
+const cartShape = (items: MockCartItem[]) => ({
+  items,
+  count: items.reduce((n, i) => n + i.qty, 0),
+  subtotal: items.reduce((n, i) => n + i.price * i.qty, 0),
+});
+
+const NOTIF_SEED = [
+  { id: 'n1', icon: 'color-palette', bg: '#F5EAEF', color: '#753248', title: 'New shade match ready', body: 'We found 3 new foundations matching your tone.', time: '2h', read: false, route: '/(tabs)/match' },
+  { id: 'n2', icon: 'book', bg: '#EAF7EF', color: '#2F7D52', title: 'Tutorial picked for you', body: '"The Glass Skin Method" matches your goals.', time: '5h', read: false, route: '/(tabs)/learn' },
+  { id: 'n3', icon: 'sparkles', bg: '#EAF0FB', color: '#3B5BDB', title: 'Your recreation is done', body: 'Tap to see your personalised look breakdown.', time: '1d', read: false, route: '/(tabs)/recreate' },
+  { id: 'n4', icon: 'diamond', bg: '#FBF1E6', color: '#A06A2C', title: 'Try DollFace Pro free', body: 'Unlock unlimited matches for 7 days, on us.', time: '2d', read: true, route: '/premium' },
+];
+
 function makeTokens(userId: string) {
   return {
     accessToken: `mock.access.${userId}.${Date.now()}`,
@@ -243,6 +268,157 @@ export const mockAdapter: AxiosAdapter = async (config) => {
   // ── ACCOUNT & ROUTINES ────────────────────────────────
   if (url === 'me/stats' && method === 'get') return ok(config, seed.ME_STATS);
   if (url === 'routines' && method === 'get') return ok(config, seed.ROUTINES);
+
+  // ── CART ──────────────────────────────────────────────
+  if (url === 'cart' && method === 'get') return ok(config, cartShape(await readJSON<MockCartItem[]>('mock_cart', [])));
+  if (url === 'cart/items' && method === 'post') {
+    const items = await readJSON<MockCartItem[]>('mock_cart', []);
+    const ex = items.find(i => i.productId === body.productId && (i.shade ?? null) === (body.shade ?? null));
+    if (ex) ex.qty += body.qty ?? 1;
+    else items.push({ id: `ci_${Date.now()}`, productId: body.productId, name: body.name, brand: body.brand, price: body.price, shade: body.shade, img: body.img, qty: body.qty ?? 1 });
+    await writeJSON('mock_cart', items);
+    return ok(config, cartShape(items), 201);
+  }
+  if (/^cart\/items\/[^/]+$/.test(url) && method === 'patch') {
+    const id = url.split('/')[2];
+    let items = await readJSON<MockCartItem[]>('mock_cart', []);
+    items = body.qty <= 0 ? items.filter(i => i.id !== id) : items.map(i => (i.id === id ? { ...i, qty: body.qty } : i));
+    await writeJSON('mock_cart', items);
+    return ok(config, cartShape(items));
+  }
+  if (/^cart\/items\/[^/]+$/.test(url) && method === 'delete') {
+    const id = url.split('/')[2];
+    const items = (await readJSON<MockCartItem[]>('mock_cart', [])).filter(i => i.id !== id);
+    await writeJSON('mock_cart', items);
+    return ok(config, cartShape(items));
+  }
+  if (url === 'cart' && method === 'delete') { await writeJSON('mock_cart', []); return ok(config, cartShape([])); }
+  if (url === 'cart/coupon' && method === 'post') return ok(config, { applied: true, code: body.code });
+  if (url === 'cart/estimate' && method === 'get') {
+    const items = await readJSON<MockCartItem[]>('mock_cart', []);
+    const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
+    const shipping = subtotal > 40 || subtotal === 0 ? 0 : 3.95;
+    const tax = Math.round(subtotal * 0.2 * 100) / 100;
+    return ok(config, { subtotal, discount: 0, shipping, tax, total: Math.round((subtotal + shipping + tax) * 100) / 100, currency: 'GBP' });
+  }
+
+  // ── CHECKOUT & ORDERS ─────────────────────────────────
+  if (url === 'checkout/shipping-options' && method === 'get') return ok(config, [
+    { id: 'standard', label: 'Standard (3–5 days)', price: 3.95, eta: '3–5 working days' },
+    { id: 'express', label: 'Express (1–2 days)', price: 6.95, eta: '1–2 working days' },
+    { id: 'free', label: 'Free over £40', price: 0, eta: '3–5 working days' },
+  ]);
+  if (url === 'checkout/session' && method === 'post') {
+    const items = await readJSON<MockCartItem[]>('mock_cart', []);
+    const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
+    const shipping = subtotal > 40 || subtotal === 0 ? 0 : 3.95;
+    const total = Math.round((subtotal + shipping + subtotal * 0.2) * 100) / 100;
+    return ok(config, { sessionId: `sess_${Date.now()}`, clientSecret: 'mock_secret', amount: total, currency: 'GBP' });
+  }
+  if (url === 'orders' && method === 'post') {
+    const items = await readJSON<MockCartItem[]>('mock_cart', []);
+    if (!items.length) fail(config, 'Your bag is empty', 400);
+    const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
+    const shipping = subtotal > 40 ? 0 : 3.95;
+    const tax = Math.round(subtotal * 0.2 * 100) / 100;
+    const order = { id: `o_${Date.now()}`, status: 'PAID', subtotal, shipping, tax, total: Math.round((subtotal + shipping + tax) * 100) / 100, currency: 'GBP', createdAt: new Date().toISOString(), items: items.map(i => ({ ...i })) };
+    const orders = await readJSON<any[]>('mock_orders', []);
+    orders.unshift(order);
+    await writeJSON('mock_orders', orders);
+    await writeJSON('mock_cart', []);
+    return ok(config, order, 201);
+  }
+  if (url === 'orders' && method === 'get') return ok(config, await readJSON('mock_orders', []));
+  if (/^orders\/[^/]+\/tracking$/.test(url) && method === 'get') {
+    const id = url.split('/')[1];
+    return ok(config, { status: 'PAID', carrier: 'Royal Mail', trackingNo: `DF${id.slice(-8).toUpperCase()}`, steps: [{ label: 'Order placed', done: true }, { label: 'Preparing', done: true }, { label: 'Shipped', done: false }, { label: 'Delivered', done: false }] });
+  }
+  if (/^orders\/[^/]+\/cancel$/.test(url) && method === 'post') {
+    const id = url.split('/')[1];
+    const orders = (await readJSON<any[]>('mock_orders', [])).map(o => (o.id === id ? { ...o, status: 'CANCELLED' } : o));
+    await writeJSON('mock_orders', orders);
+    return ok(config, { status: 'CANCELLED' });
+  }
+  if (/^orders\/[^/]+\/reorder$/.test(url) && method === 'post') {
+    const id = url.split('/')[1];
+    const order = (await readJSON<any[]>('mock_orders', [])).find(o => o.id === id);
+    if (order) {
+      const cart = await readJSON<MockCartItem[]>('mock_cart', []);
+      order.items.forEach((it: MockCartItem) => cart.push({ ...it, id: `ci_${Date.now()}_${Math.round(Math.random() * 1e6)}` }));
+      await writeJSON('mock_cart', cart);
+    }
+    return ok(config, { reordered: true });
+  }
+  if (/^orders\/[^/]+$/.test(url) && method === 'get') {
+    const order = (await readJSON<any[]>('mock_orders', [])).find(o => o.id === url.split('/')[1]);
+    return order ? ok(config, order) : fail(config, 'Order not found', 404);
+  }
+
+  // ── ADDRESSES ─────────────────────────────────────────
+  if (url === 'addresses' && method === 'get') return ok(config, await readJSON('mock_addresses', []));
+  if (url === 'addresses' && method === 'post') {
+    const list = await readJSON<any[]>('mock_addresses', []);
+    const addr = { id: `a_${Date.now()}`, ...body, isDefault: body.isDefault || list.length === 0 };
+    if (addr.isDefault) list.forEach(a => (a.isDefault = false));
+    list.push(addr);
+    await writeJSON('mock_addresses', list);
+    return ok(config, addr, 201);
+  }
+  if (/^addresses\/[^/]+\/default$/.test(url) && method === 'post') {
+    const id = url.split('/')[1];
+    const list = (await readJSON<any[]>('mock_addresses', [])).map(a => ({ ...a, isDefault: a.id === id }));
+    await writeJSON('mock_addresses', list);
+    return ok(config, { isDefault: true });
+  }
+  if (/^addresses\/[^/]+$/.test(url) && (method === 'patch')) {
+    const id = url.split('/')[1];
+    const list = (await readJSON<any[]>('mock_addresses', [])).map(a => (a.id === id ? { ...a, ...body } : a));
+    await writeJSON('mock_addresses', list);
+    return ok(config, list.find(a => a.id === id));
+  }
+  if (/^addresses\/[^/]+$/.test(url) && method === 'delete') {
+    const id = url.split('/')[1];
+    await writeJSON('mock_addresses', (await readJSON<any[]>('mock_addresses', [])).filter(a => a.id !== id));
+    return ok(config, { removed: true });
+  }
+
+  // ── PAYMENTS ──────────────────────────────────────────
+  if (url === 'payments/methods' && method === 'get') return ok(config, await readJSON('mock_payments', []));
+  if (url === 'payments/methods' && method === 'post') {
+    const list = await readJSON<any[]>('mock_payments', []);
+    const m = { id: `pm_${Date.now()}`, brand: body.brand ?? 'visa', last4: body.last4, expMonth: body.expMonth, expYear: body.expYear, isDefault: body.isDefault || list.length === 0 };
+    if (m.isDefault) list.forEach(x => (x.isDefault = false));
+    list.push(m);
+    await writeJSON('mock_payments', list);
+    return ok(config, m, 201);
+  }
+  if (/^payments\/methods\/[^/]+$/.test(url) && method === 'delete') {
+    const id = url.split('/')[2];
+    await writeJSON('mock_payments', (await readJSON<any[]>('mock_payments', [])).filter(m => m.id !== id));
+    return ok(config, { removed: true });
+  }
+
+  // ── NOTIFICATIONS ─────────────────────────────────────
+  if (url === 'notifications' && method === 'get') {
+    let n = await readJSON<any[] | null>('mock_notifications', null);
+    if (!n) { n = NOTIF_SEED; await writeJSON('mock_notifications', n); }
+    return ok(config, n);
+  }
+  if (url === 'notifications/unread-count' && method === 'get') {
+    const n = await readJSON<any[]>('mock_notifications', NOTIF_SEED);
+    return ok(config, { count: n.filter(x => !x.read).length });
+  }
+  if (url === 'notifications/read-all' && method === 'post') {
+    const n = (await readJSON<any[]>('mock_notifications', NOTIF_SEED)).map(x => ({ ...x, read: true }));
+    await writeJSON('mock_notifications', n);
+    return ok(config, { ok: true });
+  }
+  if (/^notifications\/[^/]+\/read$/.test(url) && method === 'post') {
+    const id = url.split('/')[1];
+    const n = (await readJSON<any[]>('mock_notifications', NOTIF_SEED)).map(x => (x.id === id ? { ...x, read: true } : x));
+    await writeJSON('mock_notifications', n);
+    return ok(config, { ok: true });
+  }
 
   // ── FALLBACK ──────────────────────────────────────────
   // Any other endpoint returns an empty success so screens that

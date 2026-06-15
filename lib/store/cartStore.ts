@@ -1,20 +1,21 @@
 import { create } from 'zustand';
 import { loadJSON, saveJSON } from '@/lib/persist';
+import { cartApi } from '@/lib/data/endpoints';
+import type { ServerCartItem } from '@/lib/data/types';
 
-export interface CartItem {
-  id: string;
-  name: string;
-  brand: string;
-  price: number;
-  shade?: string;
-  img?: string;
-  qty: number;
-}
+/**
+ * Server-backed cart. Mutations update local state optimistically, then
+ * reconcile against the API response (the source of truth). Falls back to a
+ * persisted offline cache when the network/API is unavailable.
+ */
+export type CartItem = ServerCartItem;
+
+interface AddInput { id: string; name: string; brand: string; price: number; shade?: string; img?: string }
 
 interface CartState {
-  items: CartItem[];
+  items: ServerCartItem[];
   hydrate: () => Promise<void>;
-  add: (item: Omit<CartItem, 'qty'>) => void;
+  add: (item: AddInput) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -23,33 +24,53 @@ interface CartState {
 }
 
 const KEY = 'cart';
-const persist = (items: CartItem[]) => saveJSON(KEY, items);
+const cache = (items: ServerCartItem[]) => saveJSON(KEY, items);
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
-  hydrate: async () => set({ items: await loadJSON<CartItem[]>(KEY, []) }),
-  add: (item) =>
-    set((s) => {
-      const existing = s.items.find((i) => i.id === item.id);
-      const items = existing
-        ? s.items.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i))
-        : [...s.items, { ...item, qty: 1 }];
-      persist(items);
-      return { items };
-    }),
-  remove: (id) =>
-    set((s) => {
-      const items = s.items.filter((i) => i.id !== id);
-      persist(items);
-      return { items };
-    }),
-  setQty: (id, qty) =>
-    set((s) => {
-      const items = qty <= 0 ? s.items.filter((i) => i.id !== id) : s.items.map((i) => (i.id === id ? { ...i, qty } : i));
-      persist(items);
-      return { items };
-    }),
-  clear: () => { persist([]); set({ items: [] }); },
+
+  hydrate: async () => {
+    try {
+      const cart = await cartApi.get();
+      set({ items: cart.items });
+      cache(cart.items);
+    } catch {
+      set({ items: await loadJSON<ServerCartItem[]>(KEY, []) });
+    }
+  },
+
+  add: (item) => {
+    const match = get().items.find(i => i.productId === item.id && (i.shade ?? undefined) === item.shade);
+    const items = match
+      ? get().items.map(i => (i === match ? { ...i, qty: i.qty + 1 } : i))
+      : [...get().items, { id: `tmp_${Date.now()}`, productId: item.id, name: item.name, brand: item.brand, price: item.price, shade: item.shade, img: item.img, qty: 1 }];
+    set({ items });
+    cache(items);
+    cartApi.addItem({ productId: item.id, name: item.name, brand: item.brand, price: item.price, shade: item.shade, img: item.img, qty: 1 })
+      .then(c => { set({ items: c.items }); cache(c.items); })
+      .catch(() => {});
+  },
+
+  remove: (id) => {
+    const items = get().items.filter(i => i.id !== id);
+    set({ items });
+    cache(items);
+    cartApi.remove(id).then(c => { set({ items: c.items }); cache(c.items); }).catch(() => {});
+  },
+
+  setQty: (id, qty) => {
+    const items = qty <= 0 ? get().items.filter(i => i.id !== id) : get().items.map(i => (i.id === id ? { ...i, qty } : i));
+    set({ items });
+    cache(items);
+    cartApi.setQty(id, qty).then(c => { set({ items: c.items }); cache(c.items); }).catch(() => {});
+  },
+
+  clear: () => {
+    set({ items: [] });
+    cache([]);
+    cartApi.clear().catch(() => {});
+  },
+
   count: () => get().items.reduce((n, i) => n + i.qty, 0),
   subtotal: () => get().items.reduce((n, i) => n + i.price * i.qty, 0),
 }));
