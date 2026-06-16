@@ -30,6 +30,10 @@ import { BrandSplash } from '@/components/layout/BrandSplash';
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { initMonitoring } from '@/lib/monitoring';
+
+// Initialise crash/error monitoring as early as possible (no-op without a DSN).
+initMonitoring();
 
 SplashScreen.preventAutoHideAsync();
 

@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { PressableScale } from '@/components/ui/Motion';
+import { captureException } from '@/lib/monitoring';
 import { Colors } from '@/constants/colors';
 
 interface Props { children: ReactNode }
@@ -17,7 +18,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    // TODO(prod): report to Sentry/crash reporting here.
+    captureException(error); // real Sentry capture when EXPO_PUBLIC_SENTRY_DSN is set
     console.error('Render error caught by boundary:', error);
   }
 
