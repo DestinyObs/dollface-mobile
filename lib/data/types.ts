@@ -1,7 +1,7 @@
 /**
  * Domain types — the contract the app consumes from the backend.
- * Shapes mirror what the screens render; the mock (lib/mockApi.ts) and a real
- * backend must both return these under the `{ success, data }` envelope.
+ * Shapes mirror what the screens render; the backend returns these under the
+ * `{ success, data }` envelope.
  */
 
 export type Level = 'Easy' | 'Medium' | 'Hard';
