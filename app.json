@@ -19,7 +19,11 @@
       "adaptiveIcon": {
         "backgroundColor": "#753248",
         "foregroundImage": "./assets/android-icon-foreground.png"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -58,8 +62,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
-    }
+        "projectId": "a4d3d63b-d1ef-4063-a8e7-6dfc8a56fe3a"
+      },
+      "router": {}
+    },
+    "owner": "destinyobs"
   }
 }
