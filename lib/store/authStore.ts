@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User, AuthTokens } from '@/types/auth';
 import { storage } from '@/lib/storage';
+import { registerPushToken, unregisterPushToken } from '@/lib/push';
 
 interface AuthState {
   user: User | null;
@@ -25,9 +26,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   setTokens: async (tokens) => {
     await storage.setItem('accessToken', tokens.accessToken);
     await storage.setItem('refreshToken', tokens.refreshToken);
+    // Associate this device's push token with the now-authenticated user
+    // (silent — no OS prompt; only registers if permission was already granted).
+    registerPushToken().catch(() => {});
   },
 
   logout: async () => {
+    await unregisterPushToken().catch(() => {});
     await storage.deleteItem('accessToken');
     await storage.deleteItem('refreshToken');
     await storage.deleteItem('user');
