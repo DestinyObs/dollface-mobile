@@ -7,6 +7,7 @@ import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ScreenLoader } from '@/components/ui/ScreenLoader';
 import { EmptyView } from '@/components/shared/EmptyView';
+import { ErrorView } from '@/components/shared/ErrorView';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { ordersApi } from '@/lib/data/endpoints';
 import { Colors } from '@/constants/colors';
@@ -16,14 +17,17 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function OrdersScreen() {
-  const { data, isLoading } = useQuery({ queryKey: ['orders'], queryFn: ordersApi.list });
-  if (isLoading) return <ScreenLoader />;
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['orders'], queryFn: ordersApi.list });
   const orders = data ?? [];
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <ScreenHeader title="My Orders" />
-      {orders.length === 0 ? (
+      {isLoading ? (
+        <ScreenLoader />
+      ) : isError ? (
+        <ErrorView onRetry={() => refetch()} />
+      ) : orders.length === 0 ? (
         <View style={{ flex: 1 }}>
           <EmptyView icon="bag-handle-outline" title="No orders yet" body="Your orders will appear here once you check out." actionLabel="Browse Shop" onAction={() => router.replace('/product')} />
         </View>

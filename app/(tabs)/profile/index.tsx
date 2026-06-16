@@ -30,9 +30,17 @@ const MENU: { group: string; items: { label: string; icon: IName; route: string;
       { label: 'Saved Looks',     icon: 'heart-outline',         route: '/(tabs)/profile/saved-looks',     color: '#C0392B', bg: '#FFF0EE' },
       { label: 'Saved Tutorials', icon: 'bookmark-outline',      route: '/(tabs)/profile/saved-tutorials', color: '#3B5BDB', bg: '#EAF0FB' },
       { label: 'Saved Products',  icon: 'bag-outline',           route: '/(tabs)/profile/saved-products',  color: '#2D6A4F', bg: '#F0FBF4' },
-      { label: 'My Orders',       icon: 'receipt-outline',       route: '/product/orders',                 color: '#3B5BDB', bg: '#EAF0FB' },
       { label: 'My Routines',     icon: 'calendar-outline',      route: '/(tabs)/profile/routines',        color: '#A06A2C', bg: '#FBF1E6' },
       { label: 'Match History',   icon: 'color-palette-outline', route: '/(tabs)/profile/match-history',   color: Colors.brand.plum, bg: Colors.blush },
+    ],
+  },
+  {
+    group: 'Shopping',
+    items: [
+      { label: 'My Orders',         icon: 'receipt-outline',  route: '/product/orders',                     color: '#3B5BDB', bg: '#EAF0FB' },
+      { label: 'Delivery Addresses', icon: 'location-outline', route: '/(tabs)/profile/addresses',           color: '#2D6A4F', bg: '#F0FBF4' },
+      { label: 'Payment Methods',   icon: 'card-outline',     route: '/(tabs)/profile/payment-methods',     color: '#A06A2C', bg: '#FBF1E6' },
+      { label: 'Browse Brands',     icon: 'pricetags-outline', route: '/product/brands',                    color: Colors.brand.plum, bg: Colors.blush },
     ],
   },
   {

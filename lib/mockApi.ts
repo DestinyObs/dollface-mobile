@@ -443,6 +443,12 @@ export const mockAdapter: AxiosAdapter = async (config) => {
     await writeJSON('mock_payments', (await readJSON<any[]>('mock_payments', [])).filter(m => m.id !== id));
     return ok(config, { removed: true });
   }
+  if (/^payments\/methods\/[^/]+\/default$/.test(url) && method === 'post') {
+    const id = url.split('/')[2];
+    const list = (await readJSON<any[]>('mock_payments', [])).map(m => ({ ...m, isDefault: m.id === id }));
+    await writeJSON('mock_payments', list);
+    return ok(config, { isDefault: true });
+  }
 
   // ── NOTIFICATIONS ─────────────────────────────────────
   if (url === 'notifications' && method === 'get') {
@@ -484,6 +490,12 @@ export const mockAdapter: AxiosAdapter = async (config) => {
 
   // ── BRANDS ────────────────────────────────────────────
   if (url === 'brands' && method === 'get') return ok(config, SEED_BRANDS);
+  if (/^brands\/[^/]+$/.test(url) && method === 'get') {
+    const id = url.split('/')[1];
+    const brand = SEED_BRANDS.find(b => b.id === id) ?? { id, name: id, description: '' };
+    const products = seed.PRODUCTS.filter(p => p.brand.toLowerCase().replace(/\s+/g, '-') === id || p.brand.toLowerCase() === brand.name.toLowerCase());
+    return ok(config, { ...brand, products: products.length ? products : seed.PRODUCTS.slice(0, 4) });
+  }
 
   // ── FALLBACK ──────────────────────────────────────────
   // Any other endpoint returns an empty success so screens that

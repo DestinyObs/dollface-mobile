@@ -75,6 +75,19 @@ export const meApi = {
   update: (body: { name?: string; bio?: string; avatarUrl?: string }) => http.patch<{ id: string; name: string; email: string; avatarUrl?: string; bio?: string }>('/me', body),
 };
 
+export interface UserSettings {
+  push: boolean;
+  email: boolean;
+  tips: boolean;
+  analytics: boolean;
+  personalisation: boolean;
+  storeScans: boolean;
+}
+export const settingsApi = {
+  get: () => http.get<UserSettings>('/me/settings'),
+  update: (body: Partial<UserSettings>) => http.patch<UserSettings>('/me/settings', body),
+};
+
 /* ── 3.22 Search ────────────────────────────────────────── */
 export interface SearchResults {
   products: import('./types').ProductSummary[];
