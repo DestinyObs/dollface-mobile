@@ -8,19 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://localhost:4200/api"
+        "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
       }
     },
     "preview": {
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.dollface.app/api"
+        "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.dollface.app/api"
+        "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
       }
     }
   },
