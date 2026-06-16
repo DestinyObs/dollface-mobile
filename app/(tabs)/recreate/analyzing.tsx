@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { recreateApi } from '@/lib/data/endpoints';
+import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
 const STEPS = [
@@ -17,19 +18,32 @@ const STEPS = [
 ];
 
 export default function AnalyzingScreen() {
+  const { uri } = useLocalSearchParams<{ uri: string }>();
   const [active, setActive] = useState(0);
   const spin = useRef(new Animated.Value(0)).current;
-  const recId = useRef<string | null>(null);
 
   useEffect(() => {
-    // Kick off the real analysis; navigate to whatever id the API returns.
-    recreateApi.upload(new FormData()).then(r => { recId.current = r.id; }).catch(() => {});
-
     Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1400, easing: Easing.linear, useNativeDriver: true })).start();
     const iv = setInterval(() => setActive(a => Math.min(a + 1, STEPS.length)), 680);
-    const done = setTimeout(() => router.replace(`/(tabs)/recreate/${recId.current ?? 'mock-recreation-id'}` as any), 3600);
-    return () => { clearInterval(iv); clearTimeout(done); };
-  }, []);
+
+    // Upload the real inspiration image and run AI analysis. Keep the animation
+    // up for a minimum beat for UX, then navigate to the real recreation.
+    let cancelled = false;
+    (async () => {
+      if (!uri) { toast.error('No image to analyse.'); router.back(); return; }
+      const form = new FormData();
+      form.append('image', { uri, name: 'look.jpg', type: 'image/jpeg' } as any);
+      const minDelay = new Promise(r => setTimeout(r, 2200));
+      try {
+        const [rec] = await Promise.all([recreateApi.upload(form), minDelay]);
+        if (!cancelled) router.replace(`/(tabs)/recreate/${rec.id}` as any);
+      } catch {
+        if (!cancelled) { toast.error('Analysis failed — please try again.'); router.back(); }
+      }
+    })();
+
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [uri]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 

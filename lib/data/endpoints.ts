@@ -36,7 +36,7 @@ export const tutorialsApi = {
 
 /* ── 3.5 Shade match ────────────────────────────────────── */
 export const matchApi = {
-  selfie: (form: FormData) => http.post<MatchResult>('/match/selfie', form),
+  selfie: (form: FormData) => http.postForm<MatchResult>('/match/selfie', form),
   manual: (body: { shade: string; brand?: string; category: string }) => http.post<MatchResult>('/match/manual', body),
   result: (id: string) => http.get<MatchResult>(`/match/${id}`),
   recent: () => http.get<RecentMatch[]>('/match/recent'),
@@ -48,7 +48,7 @@ export const matchApi = {
 
 /* ── 3.7 Recreate / look analysis ───────────────────────── */
 export const recreateApi = {
-  upload: (form: FormData) => http.post<{ id: string; status: string }>('/recreate/upload', form),
+  upload: (form: FormData) => http.postForm<{ id: string; status: string }>('/recreate/upload', form),
   status: (id: string) => http.get<{ id: string; status: string }>(`/recreate/${id}/status`),
   detail: (id: string) => http.get<Recreation>(`/recreate/${id}`),
   save: (id: string) => http.post<{ saved: boolean }>(`/recreate/${id}/save`),
