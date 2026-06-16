@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Text } from './Text';
 import { Colors } from '@/constants/colors';
 
@@ -10,9 +11,13 @@ interface Props {
 }
 
 export function Chip({ label, selected = false, onPress }: Props) {
+  const handlePress = () => {
+    Haptics.selectionAsync().catch(() => {});
+    onPress?.();
+  };
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.75}
       style={[s.chip, selected ? s.selected : s.unselected]}
     >

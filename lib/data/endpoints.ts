@@ -109,6 +109,8 @@ export const searchApi = {
 export const authApi = {
   social: (provider: 'google' | 'apple', idToken: string) =>
     http.post<{ user: import('@/types/auth').User; tokens: import('@/types/auth').AuthTokens; isNewUser: boolean }>(`/auth/social/${provider}`, { idToken }),
+  verifyEmail: (code: string) => http.post<{ verified: boolean }>('/auth/email/verify', { code }),
+  resendEmailCode: () => http.post<{ sent: boolean; devCode?: string }>('/auth/email/resend', {}),
 };
 
 export const beautyProfileApi = {

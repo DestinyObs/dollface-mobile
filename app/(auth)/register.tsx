@@ -21,6 +21,7 @@ import { Colors } from '@/constants/colors';
 const schema = z.object({
   name: z.string().min(2, 'At least 2 characters'),
   email: z.string().email('Enter a valid email'),
+  phone: z.string().regex(/^[+]?[\d][\d\s-]{6,15}$/, 'Enter a valid phone number'),
   password: z.string().min(8, 'Min 8 characters').regex(/[A-Z]/, 'Needs an uppercase letter').regex(/[0-9]/, 'Needs a number'),
   confirmPassword: z.string(),
 }).refine(d => d.password === d.confirmPassword, { message: "Passwords don't match", path: ['confirmPassword'] });
@@ -51,7 +52,7 @@ export default function RegisterScreen() {
       const res = await authApi.social(provider.toLowerCase() as 'google' | 'apple', `dollface-${provider.toLowerCase()}-dev`);
       await setTokens(res.tokens);
       setUser(res.user);
-      if (res.isNewUser) { router.replace('/(onboarding)/beauty-goals'); }
+      if (res.isNewUser) { router.replace('/(onboarding)/welcome'); }
       else { setOnboardingComplete(true); router.replace('/(tabs)'); }
     } catch {
       toast.error(`${provider} sign-up failed.`);
@@ -60,17 +61,21 @@ export default function RegisterScreen() {
   };
 
   const { control, handleSubmit, setError, watch, formState: { errors, isSubmitting } } =
-    useForm<F>({ resolver: zodResolver(schema), defaultValues: { name: '', email: '', password: '', confirmPassword: '' } });
+    useForm<F>({ resolver: zodResolver(schema), defaultValues: { name: '', email: '', phone: '', password: '', confirmPassword: '' } });
 
   const pw = watch('password');
   const sLevel = strength(pw || '');
 
   const onSubmit = async (data: F) => {
     try {
-      const res = await api.post('/auth/register', { name: data.name, email: data.email, password: data.password });
+      const res = await api.post('/auth/register', { name: data.name, email: data.email, phone: data.phone, password: data.password });
       await setTokens(res.data.data.tokens);
       setUser(res.data.data.user);
-      router.replace('/(onboarding)/beauty-goals');
+      // Email verification step — send the user to the OTP screen.
+      router.replace({
+        pathname: '/(auth)/verify-email',
+        params: { email: data.email, devCode: res.data.data.devCode ?? '' },
+      } as any);
     } catch (err: any) {
       setError('email', { message: err?.response?.data?.message ?? 'Something went wrong.' });
     }
@@ -93,6 +98,11 @@ export default function RegisterScreen() {
                 <Input label="Email address" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none"
                   autoComplete="email" onChangeText={onChange} onBlur={onBlur} value={value} error={errors.email?.message}
                   leftIcon={<Ionicons name="mail-outline" size={17} color={Colors.text.muted} />} />
+              )} />
+              <Controller control={control} name="phone" render={({ field: { onChange, value, onBlur } }) => (
+                <Input label="Phone number" placeholder="+44 7700 900000" keyboardType="phone-pad"
+                  autoComplete="tel" onChangeText={onChange} onBlur={onBlur} value={value} error={errors.phone?.message}
+                  leftIcon={<Ionicons name="call-outline" size={17} color={Colors.text.muted} />} />
               )} />
               <Controller control={control} name="password" render={({ field: { onChange, value, onBlur } }) => (
                 <View>
