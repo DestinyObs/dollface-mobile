@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ScreenLoader } from '@/components/ui/ScreenLoader';
+import { ErrorView } from '@/components/shared/ErrorView';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { toast } from '@/lib/store/toastStore';
 import { useMatchResult } from '@/lib/data/hooks';
@@ -12,9 +13,15 @@ import { Colors } from '@/constants/colors';
 
 export default function ShadeMatchResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: result } = useMatchResult(id ?? 'mock-result-id');
+  const { data: result, isLoading, isError, refetch } = useMatchResult(id ?? '');
 
-  if (!result) return <ScreenLoader />;
+  if (isLoading) return <ScreenLoader />;
+  if (isError || !result) return (
+    <SafeAreaView style={s.root} edges={['top']}>
+      <ScreenHeader title="Your Shade Matches" />
+      <ErrorView title="Couldn't load your match" onRetry={() => refetch()} />
+    </SafeAreaView>
+  );
   const RESULTS = result.items;
 
   return (
