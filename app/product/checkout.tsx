@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ScreenLoader } from '@/components/ui/ScreenLoader';
+import { ErrorView } from '@/components/shared/ErrorView';
 import { PressableScale } from '@/components/ui/Motion';
 import { useCartStore } from '@/lib/store/cartStore';
 import { toast } from '@/lib/store/toastStore';
@@ -17,7 +18,7 @@ import { Colors } from '@/constants/colors';
 export default function CheckoutScreen() {
   const cartCount = useCartStore(s => s.count)();
   const { data: addresses, refetch: refetchAddr } = useQuery({ queryKey: ['addresses'], queryFn: addressesApi.list });
-  const { data: estimate, isLoading } = useQuery({ queryKey: ['cart', 'estimate'], queryFn: cartApi.estimate });
+  const { data: estimate, isLoading, isError, refetch } = useQuery({ queryKey: ['cart', 'estimate'], queryFn: cartApi.estimate });
   const { data: shipping = [] } = useQuery({ queryKey: ['shipping'], queryFn: ordersApi.shippingOptions });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -26,7 +27,13 @@ export default function CheckoutScreen() {
   const [shipId, setShipId] = useState('standard');
   const [placing, setPlacing] = useState(false);
 
-  if (isLoading || !estimate) return <ScreenLoader />;
+  if (isLoading) return <ScreenLoader />;
+  if (isError || !estimate) return (
+    <SafeAreaView style={s.root} edges={['top']}>
+      <ScreenHeader title="Checkout" />
+      <ErrorView title="Couldn't load checkout" onRetry={() => refetch()} />
+    </SafeAreaView>
+  );
 
   const chosenAddress = selectedId ?? addresses?.find(a => a.isDefault)?.id ?? addresses?.[0]?.id ?? null;
   const formValid = form.name.trim() && form.line1.trim() && form.city.trim() && form.postcode.trim();

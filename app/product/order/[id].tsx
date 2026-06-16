@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ScreenLoader } from '@/components/ui/ScreenLoader';
+import { ErrorView } from '@/components/shared/ErrorView';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { AppImage } from '@/components/ui/AppImage';
 import { useCartStore } from '@/lib/store/cartStore';
@@ -17,10 +18,16 @@ import { Colors } from '@/constants/colors';
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const qc = useQueryClient();
-  const { data: order } = useQuery({ queryKey: ['order', id], queryFn: () => ordersApi.detail(id!), enabled: !!id });
+  const { data: order, isLoading, isError, refetch } = useQuery({ queryKey: ['order', id], queryFn: () => ordersApi.detail(id!), enabled: !!id });
   const { data: tracking } = useQuery({ queryKey: ['order', id, 'tracking'], queryFn: () => ordersApi.tracking(id!), enabled: !!id });
 
-  if (!order) return <ScreenLoader />;
+  if (isLoading) return <ScreenLoader />;
+  if (isError || !order) return (
+    <SafeAreaView style={s.root} edges={['top']}>
+      <ScreenHeader title="Order" />
+      <ErrorView title="Couldn't load order" onRetry={() => refetch()} />
+    </SafeAreaView>
+  );
   const cancellable = !['SHIPPED', 'DELIVERED', 'CANCELLED'].includes(order.status);
 
   const onCancel = () => confirm({
