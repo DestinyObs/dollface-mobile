@@ -54,8 +54,7 @@
           "color": "#753248"
         }
       ],
-      "expo-image",
-      "@sentry/react-native"
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
