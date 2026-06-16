@@ -1,12 +1,10 @@
 /**
  * Typed endpoint client — the app's view of the backend, grouped by domain to
- * mirror dollface-backend/API_SPEC.md. Functions used by the current screens
- * are wired now (phase M); later-phase domains are stubbed with the right path
- * + types so they slot in as the backend grows, without changing call sites.
+ * mirror dollface-backend/API_SPEC.md.
  *
  * Everything flows through `http` (lib/data/request.ts), which unwraps the
- * `{ success, data }` envelope. Swap mock → real backend by setting
- * EXPO_PUBLIC_API_URL — no call-site changes.
+ * `{ success, data }` envelope and talks to the real backend at
+ * EXPO_PUBLIC_API_URL.
  */
 import { http } from './request';
 import type {

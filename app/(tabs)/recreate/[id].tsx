@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ScreenLoader } from '@/components/ui/ScreenLoader';
+import { ErrorView } from '@/components/shared/ErrorView';
 import { PressableScale, Reveal } from '@/components/ui/Motion';
 import { useSavedStore } from '@/lib/store/savedStore';
 import { toast } from '@/lib/store/toastStore';
@@ -16,10 +17,16 @@ type IName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function LookRecreationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: recreation } = useRecreation(id ?? 'mock-recreation-id');
+  const { data: recreation, isLoading, isError, refetch } = useRecreation(id ?? '');
   const [version, setVersion] = useState(0);
 
-  if (!recreation) return <ScreenLoader />;
+  if (isLoading) return <ScreenLoader />;
+  if (isError || !recreation) return (
+    <SafeAreaView style={s.root} edges={['top']}>
+      <ScreenHeader title="Look Breakdown" />
+      <ErrorView title="Couldn't load this look" onRetry={() => refetch()} />
+    </SafeAreaView>
+  );
   const VERSIONS = recreation.versions;
   const SECTIONS = recreation.sections;
 
