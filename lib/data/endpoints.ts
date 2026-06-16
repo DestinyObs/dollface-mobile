@@ -55,6 +55,14 @@ export const recreateApi = {
   history: () => http.get<Recreation[]>('/recreate/history'),
 };
 
+/* ── Devices / push registration ────────────────────────── */
+export const devicesApi = {
+  register: (body: { expoPushToken: string; platform: 'ios' | 'android' | 'web'; appVersion?: string }) =>
+    http.post<{ id: string; registered: boolean }>('/devices', body),
+  unregister: (token: string) => http.del<{ unregistered: boolean }>(`/devices/${encodeURIComponent(token)}`),
+  testPush: () => http.post<{ sent: number }>('/devices/test-push', {}),
+};
+
 /* ── 3.9 Products / catalog ─────────────────────────────── */
 export const productsApi = {
   list: (params?: { category?: string; search?: string }) => http.get<ProductSummary[]>('/products', params),

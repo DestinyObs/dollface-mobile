@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
-import * as Notifications from 'expo-notifications';
 import { PermissionScreen } from '@/components/layout/PermissionScreen';
+import { registerPushToken } from '@/lib/push';
 
 export default function NotificationPermissionScreen() {
   const next = () => router.push('/(onboarding)/complete');
   const request = async () => {
-    try { await Notifications.requestPermissionsAsync(); } catch {}
+    // Requests the OS permission and registers the device's push token with the backend.
+    await registerPushToken({ prompt: true });
     next();
   };
 
