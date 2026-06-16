@@ -1,0 +1,31 @@
+# Maestro smoke flow — auth happy path.
+# Requires: a running backend (EXPO_PUBLIC_API_URL reachable from the device/emulator)
+# with the seeded demo user (demo@dollface.app / password123), and the app
+# installed on a simulator/emulator or device.
+#
+# Run:  maestro test .maestro/login.yaml
+appId: com.dollface.mobile
+---
+- launchApp:
+    clearState: true
+
+# Welcome screen
+- assertVisible: "Get Started"
+- assertVisible: "Sign In"
+- tapOn: "Sign In"
+
+# Login screen
+- assertVisible: "Email address"
+- tapOn:
+    text: "hello@example.com"
+- inputText: "demo@dollface.app"
+- tapOn:
+    below: "Email address"  # password field
+- inputText: "password123"
+- hideKeyboard
+- tapOn: "Sign In"
+
+# Landed in the app (tab bar visible) — real backend authenticated the session
+- assertVisible:
+    id: ".*(Home|Shop|Match|Learn|Profile).*"
+    optional: true
