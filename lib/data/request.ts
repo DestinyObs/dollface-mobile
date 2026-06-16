@@ -17,4 +17,7 @@ export const http = {
   put: <T>(url: string, data?: unknown) => request<T>({ method: 'put', url, data }),
   patch: <T>(url: string, data?: unknown) => request<T>({ method: 'patch', url, data }),
   del: <T>(url: string) => request<T>({ method: 'delete', url }),
+  /** Multipart upload (images). Sets the multipart content-type for the platform. */
+  postForm: <T>(url: string, form: FormData) =>
+    request<T>({ method: 'post', url, data: form, headers: { 'Content-Type': 'multipart/form-data' } }),
 };

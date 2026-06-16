@@ -7,16 +7,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { PressableScale } from '@/components/ui/Motion';
 import { AppImage } from '@/components/ui/AppImage';
+import { toast } from '@/lib/store/toastStore';
 import { Colors } from '@/constants/colors';
 
 export default function UploadInspirationScreen() {
   const [image, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { toast.error('Photo library access is needed to choose a photo.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.8 });
     if (!result.canceled) setImage(result.assets[0].uri);
   };
   const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { toast.error('Camera access is needed to take a photo.'); return; }
     const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.8 });
     if (!result.canceled) setImage(result.assets[0].uri);
   };
@@ -39,7 +44,7 @@ export default function UploadInspirationScreen() {
               <PressableScale style={[s.btn, s.btnGhost]} onPress={() => setImage(null)}>
                 <Text style={s.btnGhostText}>Change</Text>
               </PressableScale>
-              <PressableScale style={[s.btn, s.btnPrimary]} onPress={() => router.push('/(tabs)/recreate/analyzing')}>
+              <PressableScale style={[s.btn, s.btnPrimary]} onPress={() => router.push({ pathname: '/(tabs)/recreate/analyzing', params: { uri: image } } as any)}>
                 <Ionicons name="sparkles" size={15} color="#FFFFFF" />
                 <Text style={s.btnPrimaryText}>Analyse Look</Text>
               </PressableScale>
