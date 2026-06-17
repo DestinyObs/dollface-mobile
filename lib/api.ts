@@ -7,7 +7,9 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  // Generous timeout: the free backend can cold-start (~30–60s) after idle, so a
+  // short timeout would make the first screens spin forever then fail.
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 

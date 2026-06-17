@@ -172,8 +172,8 @@ export default function ProfileScreen() {
           </Reveal>
         ))}
 
-        <TouchableOpacity onPress={handleLogout} style={s.signOut} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={16} color={Colors.status.error} />
+        <TouchableOpacity onPress={handleLogout} style={s.signOut} activeOpacity={0.85}>
+          <Ionicons name="log-out-outline" size={18} color={Colors.status.error} />
           <Text style={s.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -224,6 +224,10 @@ const s = StyleSheet.create({
   menuIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { flex: 1, fontFamily: 'DMSans_500Medium', fontSize: 13.5, color: Colors.text.primary },
 
-  signOut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 8, paddingVertical: 12 },
-  signOutText: { fontFamily: 'DMSans_700Bold', fontSize: 14, color: Colors.status.error },
+  signOut: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginTop: 16, marginHorizontal: 20, height: 54, borderRadius: 16,
+    backgroundColor: '#FDECEC', borderWidth: 1.5, borderColor: 'rgba(192,57,43,0.25)',
+  },
+  signOutText: { fontFamily: 'DMSans_700Bold', fontSize: 15, color: Colors.status.error },
 });

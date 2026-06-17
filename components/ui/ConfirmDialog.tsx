@@ -38,13 +38,15 @@ export function ConfirmDialog() {
 }
 
 const s = StyleSheet.create({
-  overlayWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 99998, padding: 28 },
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(20,5,11,0.5)' },
-  dialog: { width: '100%', maxWidth: 340, backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.3, shadowRadius: 30, elevation: 20 },
+  // High elevation so the whole overlay sits ABOVE the floating tab bar on Android
+  // (zIndex alone doesn't stack across parents on Android — elevation does).
+  overlayWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 99998, elevation: 9999, padding: 28 },
+  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(20,5,11,0.5)', elevation: 9998 },
+  dialog: { width: '100%', maxWidth: 340, backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.3, shadowRadius: 30, elevation: 9999, zIndex: 99999 },
   title: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 19, color: Colors.text.primary, marginBottom: 8 },
-  message: { fontFamily: 'DMSans_400Regular', fontSize: 13.5, color: Colors.text.secondary, lineHeight: 20, marginBottom: 20 },
+  message: { fontFamily: 'DMSans_400Regular', fontSize: 13.5, color: Colors.text.secondary, lineHeight: 20, marginBottom: 22 },
   actions: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  btn: { flex: 1, height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   cancel: { backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.border.light },
   cancelText: { fontFamily: 'DMSans_700Bold', fontSize: 14, color: Colors.text.secondary },
   confirm: { backgroundColor: Colors.brand.plum },
