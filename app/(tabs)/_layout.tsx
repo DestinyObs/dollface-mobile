@@ -93,14 +93,15 @@ const bar = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 44,
-    width: 44,
-    borderRadius: 22,
+    minWidth: 44,
+    borderRadius: 999,        // fully-rounded ends (was rendering square on Android)
+    overflow: 'hidden',       // force Android to clip the background to the radius
   },
   tabActive: {
-    width: 'auto',
     paddingHorizontal: 16,
     gap: 8,
     backgroundColor: Colors.brand.plum,
+    borderRadius: 999,        // set explicitly on the active style too
   },
   label: {
     fontFamily: 'DMSans_700Bold',

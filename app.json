@@ -22,6 +22,8 @@
       },
       "permissions": [
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -65,6 +67,12 @@
       },
       "router": {}
     },
-    "owner": "destinyobs"
+    "owner": "destinyobs",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a4d3d63b-d1ef-4063-a8e7-6dfc8a56fe3a"
+    }
   }
 }

@@ -9,7 +9,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -18,7 +19,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
-      }
+      },
+      "channel": "preview"
     },
     "ios-sim": {
       "distribution": "internal",
@@ -27,13 +29,15 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
-      }
+      },
+      "channel": "ios-sim"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dollface-api.onrender.com/api"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
