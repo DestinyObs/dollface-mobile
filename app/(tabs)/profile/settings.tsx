@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,19 +6,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { toast } from '@/lib/store/toastStore';
+import { settingsApi, type UserSettings } from '@/lib/data/endpoints';
 import { Colors } from '@/constants/colors';
 
 type IName = React.ComponentProps<typeof Ionicons>['name'];
 
-export default function SettingsScreen() {
-  const [push, setPush] = useState(true);
-  const [email, setEmail] = useState(false);
-  const [tips, setTips] = useState(true);
+const DEFAULTS: UserSettings = { push: true, email: true, tips: true, analytics: true, personalisation: true, storeScans: true };
 
-  const toggles: { icon: IName; label: string; value: boolean; set: (v: boolean) => void; bg: string; color: string }[] = [
-    { icon: 'notifications-outline', label: 'Push notifications', value: push, set: setPush, bg: Colors.blush, color: Colors.brand.plum },
-    { icon: 'mail-outline', label: 'Email updates', value: email, set: setEmail, bg: '#EAF0FB', color: '#3B5BDB' },
-    { icon: 'sparkles-outline', label: 'Weekly beauty tips', value: tips, set: setTips, bg: '#EAF7EF', color: '#2F7D52' },
+export default function SettingsScreen() {
+  const [settings, setSettings] = useState<UserSettings>(DEFAULTS);
+
+  // Hydrate from the backend (falls back to defaults offline).
+  useEffect(() => {
+    settingsApi.get().then(setSettings).catch(() => {});
+  }, []);
+
+  // Optimistic toggle + persist; revert on failure.
+  const update = (key: keyof UserSettings, value: boolean) => {
+    setSettings(s => ({ ...s, [key]: value }));
+    settingsApi.update({ [key]: value }).catch(() => {
+      setSettings(s => ({ ...s, [key]: !value }));
+      toast.error('Could not update that setting.');
+    });
+  };
+
+  const toggles: { icon: IName; label: string; key: keyof UserSettings; bg: string; color: string }[] = [
+    { icon: 'notifications-outline', label: 'Push notifications', key: 'push', bg: Colors.blush, color: Colors.brand.plum },
+    { icon: 'mail-outline', label: 'Email updates', key: 'email', bg: '#EAF0FB', color: '#3B5BDB' },
+    { icon: 'sparkles-outline', label: 'Weekly beauty tips', key: 'tips', bg: '#EAF7EF', color: '#2F7D52' },
   ];
 
   const links: { group: string; items: { icon: IName; label: string; route?: string; toastMsg?: string }[] }[] = [
@@ -49,7 +64,7 @@ export default function SettingsScreen() {
             <View key={t.label} style={[s.row, i < toggles.length - 1 && s.divider]}>
               <View style={[s.icon, { backgroundColor: t.bg }]}><Ionicons name={t.icon} size={16} color={t.color} /></View>
               <Text style={s.rowLabel}>{t.label}</Text>
-              <Switch value={t.value} onValueChange={t.set}
+              <Switch value={settings[t.key]} onValueChange={(v) => update(t.key, v)}
                 trackColor={{ false: '#E0D6DA', true: Colors.brand.plum }} thumbColor="#FFFFFF" />
             </View>
           ))}
